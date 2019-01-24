@@ -1,0 +1,42 @@
+set -eux
+
+touch parameters
+> parameters
+echo "CORES=${CORES}" >> parameters
+echo "PREFIX=${PREFIX}" >> parameters
+echo "DURATION=${DURATION}" >> parameters
+
+if [[ ${DURATION} =~ .+s ]]; then
+    # duration in second
+    sleep_time=$(echo ${DURATION} | sed 's/\([0-9][0-9]*\).*/\1/')
+    (( sleep_time += 5 ))
+elif [[ ${DURATION} =~ .+m ]]; then
+    # duration in min
+    sleep_time=$(echo ${DURATION} | sed 's/\([0-9][0-9]*\).*/\1/')
+    (( sleep_time = sleep_time*60 + 30 ))
+elif [[ ${DURATION} =~ .+h ]]; then
+    # duration in hour
+    sleep_time=$(echo ${DURATION} | sed 's/\([0-9][0-9]*\).*/\1/')
+    (( sleep_time = sleep_time*3600 + 30 ))
+else
+    echo "DURATION unit should be s or m or h"
+    exit 1
+fi
+
+ssh -T -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa root@${SSH_HOST} "rm -rf tmp_nfv_perf_ci; mkdir tmp_nfv_perf_ci"
+
+scp -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa parameters root@${SSH_HOST}:tmp_nfv_perf_ci/
+
+scp -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ${EXE_FILE} root@${SSH_HOST}:tmp_nfv_perf_ci/
+
+ssh -T -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa root@${SSH_HOST} <<EOSSH
+cd tmp_nfv_perf_ci
+chmod u+x ${EXE_FILE}
+./${EXE_FILE} parameters
+EOSSH
+
+sleep ${sleep_time}
+
+# retrieve results
+scp -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa root@${SSH_HOST}:tmp_nfv_perf_ci/*.out ./
+

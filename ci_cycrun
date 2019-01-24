@@ -1,0 +1,40 @@
+set -ux
+
+source parameters
+
+core_list=""
+
+for item in $(echo ${CORES} | sed 's/,/ /g'); do
+    echo $item
+    if [[ $item =~ .+-.+ ]]; then
+        # this is a - seperated list
+        range=$(echo $item | sed 's/-/ /')
+        core_list="$core_list $(seq -s ' ' $range)"
+    else
+        core_list="$core_list $item"
+    fi
+done
+
+# how many cores in the core_list
+count=0
+for item in $core_list; do
+    count=$((count+1))
+done
+
+# replace , with space
+cores=$(echo -n $core_list | sed 's/ /,/g')
+
+for cmd in tmux stress cyclictest; do
+    command -v $cmd >/dev/null 2>&1 || { echo >&2 "$cmd required but not installed.  Aborting"; exit 1; }
+done
+
+window=1
+tmux kill-session -t cyc
+tmux new-session -s cyc -d
+for item in $core_list; do
+    tmux new-window -t cyc -n $window "taskset -c $item stress --cpu 1"
+    window=$((window+1))
+done
+
+tmux new-window -t cyc -n $window "cyclictest -a $cores -t $count -m -n -q -p95 -D $DURATION -h60 -i 200 > cyclictest_${PREFIX}_${DURATION}.out"
+
