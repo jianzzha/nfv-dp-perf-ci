@@ -1,3 +1,67 @@
+install_tmux() {
+    # if already installed, just quit
+    if command -v tmux >/dev/null 2>&1; then
+        return
+    fi
+    sudo yum install -y tmux
+}
+
+install_devtools() {
+    # if none of these tools are installed, then install the devtools
+    for cmd in gcc cc make gmake; do
+        if ! command -v $cmd >/dev/null 2>&1; then
+            sudo yum group install -y "Development Tools"
+            return
+        fi
+    done
+}
+
+install_wget() {
+    # if already installed, just quit
+    if command -v wget >/dev/null 2>&1; then
+        return
+    fi
+    sudo yum install -y wget
+}
+
+install_stress() {
+    # if already installed, just quit
+    if command -v stress >/dev/null 2>&1; then
+        return
+    fi
+    if ! install_wget; then
+        echo "wget required"
+        exit 1
+    fi
+    if ! install_devtools; then
+        echo "Devtools required"
+        exit 1
+    fi
+    wget -O /tmp/stress.tar.gz https://people.seas.harvard.edu/~apw/stress/stress-1.0.4.tar.gz
+    if [ -f stress.tar.gz ]; then
+        tar -zvxf /tmp/stress.tar.gz -C /tmp
+        rm -rf /tmp/stress.tar.gz
+    fi
+    for item in $(ls -d /tmp/stress*); do
+        if [ -d $item ]; then
+            pushd $item
+            ./configure && make install
+            popd
+            rm -rf $item
+            return
+        fi
+    done
+}
+     
+install_cyclictest() {
+    # if already installed, just quit
+    if command -v cyclictest >/dev/null 2>&1; then
+        return
+    fi
+    sudo yum install -y rt-tests
+}
+
+
 set -ux
 
 source parameters
@@ -24,17 +88,27 @@ done
 # replace , with space
 cores=$(echo -n $core_list | sed 's/ /,/g')
 
+install_tmux
+install_stress
+install_cyclictest
+
 for cmd in tmux stress cyclictest; do
     command -v $cmd >/dev/null 2>&1 || { echo >&2 "$cmd required but not installed.  Aborting"; exit 1; }
 done
 
-window=1
-tmux kill-session -t cyc
+# kill the session if it exists
+if tmux has -t "cyc" 2>/dev/null; then
+    tmux kill-session -t cyc
+fi
+
+# start a detached session
 tmux new-session -s cyc -d
+
+window=1
 for item in $core_list; do
     tmux new-window -t cyc -n $window "taskset -c $item stress --cpu 1"
     window=$((window+1))
 done
 
-tmux new-window -t cyc -n $window "cyclictest -a $cores -t $count -m -n -q -p95 -D $DURATION -h60 -i 200 > cyclictest_${PREFIX}_${DURATION}.out"
+tmux new-window -t cyc -n $window "cyclictest -a $cores -t $count -m -n -q -p95 -D $DURATION -h60 -i 200 > cyclictest_${PREFIX}_${count}cpu_${DURATION}.out"
 
