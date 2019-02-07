@@ -1,0 +1,30 @@
+---
+- hosts: undercloud 
+  gather_facts: false
+  remote_user: stack
+  tasks:
+    - name: Create target directory
+      file: path=/home/stack/templates/{{TEST_ITEM}}/nic-configs/ state=directory mode=0755
+
+    - name: copy overcloud deployment templates 
+      template:
+        src: "templates/{{TEST_ITEM}}/{{item.src}}"
+        dest: "/home/stack/templates/{{TEST_ITEM}}/{{item.dest}}"
+        owner: stack
+        group: stack
+      with_items:
+        - src: nic-configs/compute.yaml.j2
+          dest: nic-configs/compute.yaml
+        - src: nic-configs/controller.yaml.j2
+          dest: nic-configs/controller.yaml
+        - src: environment.yaml.j2
+          dest: environment.yaml
+        - src: deploy.sh.j2
+          dest: deploy.sh
+        - src: disable-telemetry.yaml
+          dest: disable-telemetry.yaml
+        - src: post-install.yaml
+          dest: post-install.yaml
+
+ 
+

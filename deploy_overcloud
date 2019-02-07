@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+set -eux -o pipefail
+
+# Set Hosts
+echo "[undercloud]" | tee -a hosts
+echo "${UNDERCLOUD} ansible_ssh_pass=${SSH_PASSWORD}" | tee -a hosts
+ansible-playbook -i hosts install_templates.yaml \
+                 -e "DATA_NIC_1=${DATA_NIC_1} DATA_NIC_2=${DATA_NIC_2} TEST_ITEM=${TEST_ITEM}" \
+                 -e "DOCKER_IMG_TAG=${DOCKER_IMG_TAG} DEPLOY_PORT=${DEPLOY_PORT} COMPUTE_CONTROL_PORT=${COMPUTE_CONTROL_PORT}" \
+                 -e "CONTROLLER_CONTROL_PORT=${CONTROLLER_CONTROL_PORT} CONTROLLER_ACCESS_PORT=${CONTROLLER_ACCESS_PORT}" \
+                 -e "COMPUTE_ACCESS_PORT=${COMPUTE_ACCESS_PORT}"
+
+
