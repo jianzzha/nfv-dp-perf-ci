@@ -1,0 +1,29 @@
+---
+- hosts: trafficgen
+  gather_facts: false
+  remote_user: root
+  vars_files:
+    - vars.yaml
+  tasks:
+    - name: clean up exisiting instance if any 
+      shell: |
+        screen -X -S trafficgen quit
+        if [ -e trafficgen-ci ]; then
+            rm -rf trafficgen-ci
+        fi
+        mkdir trafficgen-ci
+    - name: copy over the trafficgen cmd
+      copy:
+        src: "trafficgen_cmd.sh"
+        dest: /root/trafficgen-ci/trafficgen_cmd.sh
+        mode: 0755
+    - name: copy over the parameters file
+      copy:
+        src: parameters
+        dest: /root/trafficgen-ci/parameters
+    - shell: |
+        screen -dmS trafficgen bash -c "./trafficgen_cmd.sh" 
+      args:
+        chdir: /root/trafficgen-ci 
+
+      

@@ -1,0 +1,99 @@
+---
+- hosts: trafficgen 
+  gather_facts: false
+  remote_user: root
+  tasks:
+    - name: check if this is a VM
+      command: dmidecode -s 'system-product-name'
+      register: result
+      failed_when: "'KVM' in result.stdout"
+
+    - name: install catch-all repo
+      copy: src=files/all.repo dest=/etc/yum.repos.d/all.repo owner=root group=root mode=0644
+
+    - name: make sure common packages installed
+      yum: name={{ item }}
+      with_items:
+        - screen
+        - dpdk
+        - dpdk-tools
+        - libhugetlbfs-utils
+        - tuned
+        - tuned-profiles-cpu-partitioning 
+
+    - name: download epel rpm
+      get_url:
+        url: https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+        dest: /tmp/epel.rpm
+      register: epel_download
+      ignore_errors: yes
+
+    - name: install epel rpm
+      yum: name=/tmp/epel.rpm
+      when: epel_download is succeeded
+     
+    - name: install ndokos-pbench-epel-7
+      get_url:
+        url: https://copr.fedorainfracloud.org/coprs/ndokos/pbench/repo/epel-7/ndokos-pbench-epel-7.repo
+        dest: /etc/yum.repos.d/ndokos-pbench-epel-7.repo
+
+    - name: install pbench.repo
+      get_url:
+        url: http://pbench.perf.lab.eng.bos.redhat.com/repo/yum.repos.d/pbench.repo
+        dest: /etc/yum.repos.d/pbench.repo
+
+    - name: install pbench-agent-internal
+      yum: name={{ item }}
+      with_items:
+        - perl-JSON-XS
+        - pbench-agent-internal
+        - pbench-sysstat
+
+    - name: set boot options 
+      shell: |
+        set -eu
+        reboot_required=0
+        if ! hugeadm --list-all-mounts | grep /dev/hugepages; then
+            hugeadm --create-global-mount
+            reboot_required=1
+        fi
+        ncores=$(lscpu | sed -r -n 's/^CPU\(s\):\s+([0-9]+)/\1/p')
+        core_list=$(echo "4-$((ncores-1))")
+        boot_opts=$(cat /proc/cmdline)
+        opt="nohz_full=${core_list}"
+        if [[ ${boot_opts} != *"$opt"* ]]; then
+            sed -i -r '/^isolated_cores/d' /etc/tuned/cpu-partitioning-variables.conf
+            echo isolated_cores=${core_list} >> /etc/tuned/cpu-partitioning-variables.conf
+            tuned-adm profile cpu-partitioning
+            reboot_required=1
+        fi
+        for opt in default_hugepagesz=1G hugepagesz=1G hugepages=32 isolcpus=${core_list} ipv6.disable=1 spectre_v2=off nopti; do
+            if [[ ${boot_opts} != *"$opt"* ]]; then
+                grubby --update-kernel=`grubby --default-kernel` --args="$opt"
+                reboot_required=1
+            fi
+        done
+        if [[ ${reboot_required} -eq 1 ]]; then
+            echo "###reboot"
+        fi
+      register: result
+
+    - name: reboot and get a clean start
+      shell: "nohup sh -c '( sleep 5 ; shutdown -r now )' &"
+      async: 0
+      poll: 0
+      ignore_errors: true
+      when: '"###reboot" in result.stdout'
+
+    - name: Wait for Machine Ready
+      local_action:
+        module: wait_for
+        host: "{{inventory_hostname}}"
+        port: 22
+        delay: 10
+        timeout: 360
+      when: '"###reboot" in result.stdout'
+
+
+        
+        

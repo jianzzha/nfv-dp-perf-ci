@@ -1,0 +1,58 @@
+---
+- hosts: VMs 
+  gather_facts: false
+  remote_user: root
+  vars_files:
+    - testpmd_vars.yaml
+  tasks:
+  - name: update tuned and isolcpu boot parameter
+    shell: |
+      systemctl disable chronyd.service
+      hugeadm --create-global-mount
+      ncores=$(lscpu | sed -r -n 's/^CPU\(s\):\s+([0-9]+)/\1/p')
+      topcpu=$((ncores-1))
+      echo isolated_cores=2-$topcpu >> /etc/tuned/cpu-partitioning-variables.conf
+      tuned-adm profile cpu-partitioning
+      grubby --update-kernel=`grubby --default-kernel` --args="default_hugepagesz=1G hugepagesz=1G hugepages=1 isolcpus=2-$topcpu ipv6.disable=1 {{ 'spectre_v2=off nopti' if DISABLE_CVE|bool  else ''}}"
+  
+  - name: disable selinux
+    selinux:
+      state: disabled
+
+  - name: reboot and get a clean start
+    shell: "nohup sh -c '( sleep 5 ; shutdown -r now )' &"
+    async: 0
+    poll: 0
+    ignore_errors: true
+  - name: Wait for Machine Ready
+    local_action:
+      module: wait_for
+      host: "{{inventory_hostname}}"
+      port: 22
+      delay: 10
+      timeout: 120
+  - name: running testpmd for sriov
+    shell: |
+      rmmod vfio-pci vfio_iommu_type1 vfio
+      modprobe vfio enable_unsafe_noiommu_mode=1
+      modprobe vfio-pci
+      dpdk-devbind -u 00:05.0 00:06.0
+      dpdk-devbind -b vfio-pci 00:05.0 00:06.0
+      testpmd_cmd="testpmd -l 0,2,4 --socket-mem 1024 -n 4 --proc-type auto \
+                 --file-prefix pg -w 00:05.0 -w 00:06.0 \
+                 -- --nb-cores=2 --nb-ports=2 --portmask=3  --auto-start \
+                    --rxq=1 --txq=1 --rxd=2048 --txd=2048 >/tmp/testpmd"
+      screen -dmS testpmd bash -c "$testpmd_cmd"
+    when: TEST_ITEM == "sriov"
+  - name: running testpmd for dpdk
+    shell: |
+      modprobe uio_pci_generic
+      dpdk-devbind -u 00:04.0 00:05.0
+      dpdk-devbind -b uio_pci_generic 00:04.0 00:05.0
+      testpmd_cmd="testpmd -l 0,2,4 --socket-mem 1024 -n 4 --proc-type auto \
+                 --file-prefix pg -w 00:04.0 -w 00:05.0 \
+                 -- --nb-cores=2 --nb-ports=2 --portmask=3  --auto-start \
+                    --rxq=1 --txq=1 --rxd=1024 --txd=1024 >/tmp/testpmd"
+      screen -dmS testpmd bash -c "$testpmd_cmd"
+    when: TEST_ITEM == "dpdk"
+

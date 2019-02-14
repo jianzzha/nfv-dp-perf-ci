@@ -1,0 +1,7 @@
+#/usr/bin/bash
+
+set -eux
+
+cp vars.yaml nfv-scripts-ci/testpmd_vars.yaml
+
+ansible-playbook -i hosts deploy_testpmd.yaml

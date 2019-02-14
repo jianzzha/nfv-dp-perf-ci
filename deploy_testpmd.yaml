@@ -1,0 +1,27 @@
+---
+- hosts: undercloud 
+  gather_facts: false
+  remote_user: stack
+  vars_files:
+    - vars.yaml
+  tasks:
+    - name: copy nfv scripts 
+      copy:
+        src: "nfv-scripts-ci/"
+        dest: "/home/stack/nfv-scripts-ci/"
+        owner: stack
+        group: stack
+    - name: copy nfv-config file
+      template:
+        src: "templates/nfv_test.cfg.j2"
+        dest: "/home/stack/nfv-scripts-ci/nfv_test.cfg"
+        owner: stack
+        group: stack
+    - name: start testpmd
+      shell: chmod u+x start_trex.sh; ./start_trex.sh nfv_test.cfg
+      args:
+        chdir: /home/stack/nfv-scripts-ci
+        
+
+ 
+

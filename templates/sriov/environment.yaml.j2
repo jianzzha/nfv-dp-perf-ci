@@ -74,7 +74,7 @@ parameter_defaults:
   NeutronSriovNumVFs: "{{DATA_NIC_1}}:8,{{DATA_NIC_2}}:8"
 
   ComputeSriovParameters:
-    KernelArgs: default_hugepagesz=1GB hugepagesz=1G hugepages=32 iommu=pt intel_iommu=on isolcpus=2,4,6,8,10,12,14,16,18,26,28,30,32,34,36,38,40,42
+    KernelArgs: default_hugepagesz=1GB hugepagesz=1G hugepages=32 iommu=pt intel_iommu=on {{ "spectre_v2=off nopti" if DISABLE_CVE|bool  else ''}} isolcpus=2,4,6,8,10,12,14,16,18,26,28,30,32,34,36,38,40,42
     #TunedProfileName: "cpu-partitioning"
     IsolCpusList: "2,4,6,8,10,12,14,16,18,26,28,30,32,34,36,38,40,42"
     NovaVcpuPinSet: ['8,10,12,14,32,34,36,38']

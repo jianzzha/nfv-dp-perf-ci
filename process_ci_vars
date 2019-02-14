@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+
+set -eux -o pipefail
+
+# Prepare ansible inventory file
+echo "[undercloud]" | tee -a hosts
+echo "${UNDERCLOUD} ansible_user=root ansible_ssh_pass=${SSH_PASSWORD}" | tee -a hosts
+echo "[trafficgen]" | tee -a hosts
+# if trafficgen is on baremetal host, same root password is assumed
+if [[ ${TREX_RUN_FROM} == "baremetal"* ]]; then
+    echo "${TREX_HOST} ansible_user=root ansible_ssh_pass=${SSH_PASSWORD}" | tee -a hosts
+fi
+
+cat << EOF > vars.yaml
+---
+DISABLE_CVE: ${DISABLE_CVE}
+DATA_NIC_1: ${DATA_NIC_1}
+DATA_NIC_2: ${DATA_NIC_2}
+TEST_ITEM: ${TEST_ITEM}
+UNDERCLOUD: ${UNDERCLOUD}
+TREX_HOST: ${TREX_HOST}
+DOCKER_IMG_TAG: ${DOCKER_IMG_TAG}
+DEPLOY_PORT: ${DEPLOY_PORT}
+COMPUTE_CONTROL_PORT: ${COMPUTE_CONTROL_PORT}
+CONTROLLER_CONTROL_PORT: ${CONTROLLER_CONTROL_PORT}
+CONTROLLER_ACCESS_PORT: ${CONTROLLER_ACCESS_PORT}
+COMPUTE_ACCESS_PORT: ${COMPUTE_ACCESS_PORT}
+SSH_PASSWORD: ${SSH_PASSWORD}
+TREX_RUN_FROM: ${TREX_RUN_FROM:-baremetal_without_UC}
+VM_IMAGE_URL: ${VM_IMAGE_URL}
+ACCESS_NETWORK_TYPE: ${ACCESS_NETWORK_TYPE}
+ACCESS_NETWORK_VLAN: ${ACCESS_NETWORK_VLAN}
+DATA_NETWORK_TYPE: ${DATA_NETWORK_TYPE}
+DATA_NETWORK_VLAN_1: ${DATA_NETWORK_VLAN_1}
+DATA_NETWORK_VLAN_2: ${DATA_NETWORK_VLAN_2}
+PACKET_LOSS_RATIO: ${PACKET_LOSS_RATIO}
+PACKET_SIZE: ${PACKET_SIZE}
+SEARCH_TIME: ${SEARCH_TIME}
+VALIDATION_TIME: ${VALIDATION_TIME}
+FLOWS: ${FLOWS}
+TREX_PCI_ADDR_NIC_1: ${TREX_PCI_ADDR_NIC_1}
+TREX_PCI_ADDR_NIC_2: ${TREX_PCI_ADDR_NIC_2}
+
+EOF
+
+cat vars.yaml | sed -e '/---/d' -e 's/: /=/' > parameters
+

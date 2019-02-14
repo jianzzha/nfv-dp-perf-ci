@@ -1,0 +1,31 @@
+[rhel-7-basic]
+name=rhel-7-basic
+baseurl=http://pulp.dist.prod.ext.phx2.redhat.com/content/dist/rhel/server/7/7Server/x86_64/os/
+enabled=1
+gpgcheck=0
+
+[rhel-7-common]
+name=rhel-7-common
+gpgcheck=0
+enabled=1
+baseurl=http://pulp.dist.prod.ext.phx2.redhat.com/content/dist/rhel/server/7/7Server/x86_64/rh-common/os/
+
+[rhel-7-optional]
+name=rhel-7-optional
+baseurl=http://pulp.dist.prod.ext.phx2.redhat.com/content/dist/rhel/server/7/7Server/x86_64/optional/os/
+enabled=1
+gpgcheck=0
+
+[rhel-7-extras]
+name=rhel-7-extras
+baseurl=http://pulp.dist.stage.ext.phx2.redhat.com/content/dist/rhel/server/7/7Server/x86_64/extras/os/
+enabled=1
+gpgcheck=0
+
+[rhel-7-fast-datapth]
+name=rhel-7-fast-datapth
+gpgcheck = 0
+enabled = 1
+baseurl = http://pulp.dist.prod.ext.phx2.redhat.com/content/dist/rhel/server/7/7Server/x86_64/fast-datapath/os/
+
+

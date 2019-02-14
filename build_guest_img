@@ -1,0 +1,38 @@
+#!/usr/bin/bash
+vm_image_file=/tmp/nfv/nfv.qcow2
+vm_repo_file=/tmp/nfv/all.repo
+mkdir -p /tmp/nfv/
+wget -O ${vm_image_file} http://perf20.perf.lab.eng.bos.redhat.com:8080/images/rhel-server-7.5-x86_64-kvm.qcow2
+wget -O ${vm_repo_file} http://perf20.perf.lab.eng.bos.redhat.com:8080/images/all.repo 
+
+#modify image to use persistent interface naming
+virt-edit -a ${vm_image_file} -e "s/net.ifnames=0/net.ifnames=1/g" /boot/grub2/grub.cfg || error "virt-edit failed"
+
+#assume vm dhco port is always ens3
+#it is ok the move fails in case this is not a new it was moved before
+virt-customize -a ${vm_image_file} --run-command "mv /etc/sysconfig/network-scripts/ifcfg-eth0 /etc/sysconfig/network-scripts/ifcfg-ens3" 2>/dev/null
+#but if the following fail then we have to bail out
+virt-edit -a ${vm_image_file} -e "s/eth0/ens3/g" /etc/sysconfig/network-scripts/ifcfg-ens3 || error "virt-edit failed"
+# at this time, virt-cat and virt-ls can be used to doublecheck the change we made on the image
+
+# set up password for console logon, this can be done in cloud init as well
+virt-customize -a ${vm_image_file} --root-password password:password
+#virt-customize -a ${vm_image_file} --password cloud-user:password
+virt-edit -a ${vm_image_file} -e "s/^UseDNS.*//g" /etc/ssh/sshd_config
+virt-customize -a ${vm_image_file} --run-command "echo 'UseDNS no' >> /etc/ssh/sshd_config"
+  # need to have a way to pass root-keys to cloud-init 
+#virt-customize -a ${vm_image_file} --upload /home/stack/.ssh/id_rsa.pub:/tmp/stack_key
+#root_key=$(sudo cat /root/.ssh/id_rsa.pub)
+#virt-customize -a ${vm_image_file} --write /tmp/root_key:"$root_key"
+# we could disable cloud-init and only use ansible
+#virt-customize -a ${vm_image_file} --touch /etc/cloud/cloud-init.disabled
+virt-customize -a ${vm_image_file} --copy-in ${vm_repo_file}:/etc/yum.repos.d
+virt-customize -a ${vm_image_file} --install dpdk,dpdk-tools,git,screen,libhugetlbfs-utils,tuned,tuned-profiles-cpu-partitioning
+#virt-customize -a ${vm_image_file} --run-command 'hugeadm --create-global-mount'
+#virt-edit -a ${vm_image_file} -e "s/^isolated_cores.*//g" /etc/tuned/cpu-partitioning-variables.conf
+#virt-customize -a ${vm_image_file} --append-line /etc/tuned/cpu-partitioning-variables.conf:'isolated_cores=2-6'
+#virt-customize -a ${vm_image_file} --run-command 'tuned-adm profile cpu-partitioning'
+virt-customize -a ${vm_image_file} --run-command 'touch /etc/cloud/cloud-init.disabled' --selinux-relabel
+#virt-customize -a ${vm_image_file} --selinux-relabel
+ 
+

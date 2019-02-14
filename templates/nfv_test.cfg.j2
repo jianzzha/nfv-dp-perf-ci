@@ -1,0 +1,57 @@
+disable_cve="{{DISABLE_CVE}}"
+vnic_type="{{TEST_ITEM}}"
+# if user_data has a value then cloud-init will be used and the user data will come from here
+#user_data="mime-data"
+dns_server=10.35.28.28
+# how many instances to run nfv workload
+num_vm=1
+# optionally specify the specific compute-node to start the instance, this is used when direct connection is made from trafficgen to the compute
+#compute_node="compute-0.localdomain"
+overcloudrc="/home/stack/overcloudrc"
+stackrc="/home/stack/stackrc"
+vm_image_url={{VM_IMAGE_URL}}
+# access_network_type: flat|vlan|shared
+# shared: access network is sharing the same port as the data network but on different vlan
+access_network_type={{ACCESS_NETWORK_TYPE}}
+access_network_vlan={{ACCESS_NETWORK_VLAN}}
+provider_network_type={{DATA_NETWORK_TYPE}}
+data_network_vlan_0={{DATA_NETWORK_VLAN_1}}
+data_network_vlan_1={{DATA_NETWORK_VLAN_2}}
+traffic_gen_src_slot=01:00.0
+traffic_gen_dst_slot=01:00.1
+# traffic_direction: bidirec | unidirec | revunidirec
+traffic_direction="bidirec"
+repin_ovs_nonpmd=false
+repin_kvm_emulator=false
+# routing: vpp | testpmd | testpmd-sriov
+routing="testpmd"
+# testpmd_fwd: mac|io|macswap
+testpmd_fwd="io"
+run_traffic_gen=true
+#traffic_gen_extra_opt="--skip-git-pull --flow-mods=src-ip --rate=5"
+traffic_gen_extra_opt="--skip-git-pull --flow-mods=src-ip"
+run_pbench=true
+# stop pbench tool after test? if not, manually run pbench tool is possible after test
+stop_pbench_after=false
+# what pbench tool to run on the computes and VMs; it need to be a space seperated list
+pbench_comupte_tools="proc-interrupts sar openvswitch"
+pbench_vm_tools="proc-interrupts sar"
+ftrace_host="n"
+ftrace_vm="n"
+# clean up instances after test?
+cleanup=false
+pbench_report_prefix="2hour-isolcpu-OSP12-direct-srcip_flows"
+enable_HT=true
+enable_multi_queue=false
+repin_ovs_pmd=true
+# cat /sys/class/net/<nic>/device/numa_node to check numa node
+# the core list may change based on the nic numa used
+# keep in mind, pmd_vm_eth0/pmd_dpdk2 handles instance access port; 
+# pmd_vm_eth1/pmd_dpdk0 pmd_vm_eth2/pmd_dpdk1 handles data port
+pmd_vm_eth0=1
+pmd_vm_eth1=2
+pmd_vm_eth2=4
+pmd_dpdk0=26
+pmd_dpdk1=28
+pmd_dpdk2=3
+spare_cores=""
