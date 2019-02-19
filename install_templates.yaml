@@ -1,9 +1,10 @@
 ---
 - hosts: undercloud 
   gather_facts: false
-  remote_user: stack
   vars_files:
     - vars.yaml
+  vars:
+    ansible_user: stack
   tasks:
     - name: Create target directory
       file: path=/home/stack/templates-ci/{{TEST_ITEM}}/nic-configs/ state=directory mode=0755
@@ -53,7 +54,7 @@
         dest: deploy.output
         flat: yes
 
-    - shell: ./fix_tuned_after_deploy.sh > fix_tuned.output
+    - shell: chmod u+x fix_tuned_after_deploy.sh; ./fix_tuned_after_deploy.sh > fix_tuned.output
       args:
         chdir: /home/stack/templates-ci/{{TEST_ITEM}}
 

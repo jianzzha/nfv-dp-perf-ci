@@ -1,6 +1,6 @@
 #!/bin/bash
 
-DOCKER_IMG_TAG=2018-10-18.1
+DOCKER_IMG_TAG={{DOCKER_IMG_TAG}}
 error ()
 {
   echo $* 1>&2
@@ -41,7 +41,7 @@ openstack overcloud deploy \
 -e /usr/share/openstack-tripleo-heat-templates/environments/neutron-ovs-dpdk.yaml \
 -e /usr/share/openstack-tripleo-heat-templates/environments/ovs-dpdk-permissions.yaml \
 -e $PWD/docker_registry.yaml \
--e $PWD/skylake-dpdk-environment.yaml \
+-e $PWD/environment.yaml \
 -e $PWD/disable-telemetry.yaml \
 --ntp-server clock.redhat.com
 
@@ -56,6 +56,13 @@ nova list | sed -r -n 's/.*(controller-[0-9]+).*ctlplane=([0-9.]+).*/\2 \1/p' | 
 for node in $(sed -r -n 's/.*(compute-[0-9]+|controller-[0-9]+).*/\1/p' /etc/hosts); do
     ANSIBLE_HOST_KEY_CHECKING=False UserKnownHostsFile=/dev/null ansible all -i $node, -m shell -a "> /root/.ssh/authorized_keys; echo $(sudo cat /home/stack/.ssh/id_rsa.pub) >> /root/.ssh/authorized_keys; echo $(sudo cat /root/.ssh/id_rsa.pub) >> /root/.ssh/authorized_keys" -u heat-admin -b
 done
+
+## put a link in home dir
+if [ -e ~/overcloudrc ]; then
+    rm -rf ~/overcloudrc
+fi
+
+ln -s $PWD/overcloudrc ~/overcloudrc
 
 ## clean known_hosts
 > /home/stack/.ssh/known_hosts

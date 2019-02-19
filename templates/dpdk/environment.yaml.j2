@@ -1,7 +1,7 @@
 resource_registry:
   # Specify the relative/absolute path to the config files you want to use for override the default.
-  OS::TripleO::ComputeOvsDpdk::Net::SoftwareConfig: nic-configs/compute_skylake_dpdk.yaml
-  OS::TripleO::Controller::Net::SoftwareConfig: nic-configs/controller_skylake_dpdk.yaml 
+  OS::TripleO::ComputeOvsDpdk::Net::SoftwareConfig: nic-configs/compute.yaml
+  OS::TripleO::Controller::Net::SoftwareConfig: nic-configs/controller.yaml 
   OS::TripleO::NodeExtraConfigPost: post-install.yaml
 
 parameter_defaults:
@@ -65,15 +65,15 @@ parameter_defaults:
   # ########################
   ComputeOvsDpdkParameters:
     OvsEnableDpdk: True
-    KernelArgs: default_hugepagesz=1GB hugepagesz=1G hugepages=32 iommu=pt intel_iommu=on isolcpus=2,4,6,8,10,12,14,16,18,26,28,30,32,34,36,38,40,42
-    #TunedProfileName: "cpu-partitioning"
-    IsolCpusList: "2,4,6,8,10,12,14,16,18,26,28,30,32,34,36,38,40,42"
-    NovaVcpuPinSet: ['8,10,12,14,32,34,36,38']
+    KernelArgs: default_hugepagesz=1GB hugepagesz=1G hugepages=32 iommu=pt intel_iommu=on {{ "spectre_v2=off nopti" if DISABLE_CVE|bool  else ''}} isolcpus={{ISOLATED_CPU_LIST}}
+    TunedProfileName: "cpu-partitioning"
+    IsolCpusList: "{{ISOLATED_CPU_LIST}}"
+    NovaVcpuPinSet: ['{{NOVA_CPU_LIST}}']
     NovaReservedHostMemory: 4096
     OvsDpdkSocketMemory: "1024,1024"
     OvsDpdkMemoryChannels: "4"
-    OvsDpdkCoreList: "16,40"
-    OvsPmdCoreList: "2,4,6,18,26,28,30,42"
+    OvsDpdkCoreList: "{{OVS_LCORE}}"
+    OvsPmdCoreList: "{{PMD_CORE_LIST}}"
   # MTU global configuration
   NeutronGlobalPhysnetMtu: 9000 
   # DHCP provide metadata route to VM.

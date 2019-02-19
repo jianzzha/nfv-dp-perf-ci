@@ -1,9 +1,11 @@
 ---
 - hosts: undercloud 
   gather_facts: false
-  remote_user: stack
   vars_files:
     - vars.yaml
+  vars:
+    ansible_user: stack
+
   tasks:
     - name: copy nfv scripts 
       copy:

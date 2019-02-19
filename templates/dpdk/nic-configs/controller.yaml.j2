@@ -85,7 +85,7 @@ resources:
             $network_config:
               network_config:
               - type: interface
-                name: em4
+                name: {{DEPLOY_PORT}}
                 use_dhcp: false
                 dns_servers: {get_param: DnsServers}
                 addresses:
@@ -100,35 +100,35 @@ resources:
                     get_param: EC2MetadataIp
 
               - type: interface 
-                name: p2p2 
+                name: {{CONTROLLER_CONTROL_PORT}} 
                 use_dhcp: false
 
               - type: vlan
-                device: p2p2
+                device: {{CONTROLLER_CONTROL_PORT}}
                 use_dhcp: false
                 vlan_id: {get_param: InternalApiNetworkVlanID}
                 addresses:
                 - ip_netmask: {get_param: InternalApiIpSubnet}
               - type: vlan
-                device: p2p2
+                device: {{CONTROLLER_CONTROL_PORT}}
                 use_dhcp: false
                 vlan_id: {get_param: TenantNetworkVlanID}
                 addresses:
                 - ip_netmask: {get_param: TenantIpSubnet}
               - type: vlan
-                device: p2p2
+                device: {{CONTROLLER_CONTROL_PORT}}
                 use_dhcp: false
                 vlan_id: {get_param: ExternalNetworkVlanID}
                 addresses:
                 - ip_netmask: {get_param: ExternalIpSubnet}
               - type: vlan
-                device: p2p2
+                device: {{CONTROLLER_CONTROL_PORT}}
                 use_dhcp: false
                 vlan_id: {get_param: StorageNetworkVlanID}
                 addresses:
                 - ip_netmask: {get_param: StorageIpSubnet}
               - type: vlan
-                device: p2p2
+                device: {{CONTROLLER_CONTROL_PORT}}
                 use_dhcp: false
                 vlan_id: {get_param: StorageMgmtNetworkVlanID}
                 addresses:
@@ -136,21 +136,15 @@ resources:
               - type: ovs_bridge
                 name: br-link0
                 use_dhcp: false
-                members:
-                - type: interface
-                  name: em1
               - type: ovs_bridge 
                 name: br-link1
                 use_dhcp: false
-                members:
-                - type: interface
-                  name: em2
               - type: ovs_bridge 
                 name: br-access
                 use_dhcp: false
                 members:
                 - type: interface
-                  name: p2p1 
+                  name: {{CONTROLLER_ACCESS_PORT}} 
 
 outputs:
   OS::stack_id:

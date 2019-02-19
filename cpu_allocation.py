@@ -59,7 +59,7 @@ with open(sys.argv[2], 'w') as ofile:
                 pmd_dpdk = str(int(pmd_vm_eth) + siblings_distance)
                 pmd_dpdk_index = core_list.index(pmd_dpdk)
                 core_list.pop(pmd_dpdk_index)
-                ofile.write("PMD_DATA_DPDK{0:s}={1:s}\n".format(i, pmd_dpdk)) 
+                ofile.write("PMD_DATA_DPDK{0:s}={1:s}\n".format(i, pmd_dpdk))
             else:
                 ofile.write("PMD_DATA_DPDK{0:s}={1:s}\n".format(i, pmd_vm_eth))
         access_numa = int(cfg["ACCESS_NIC_NUMA"])
@@ -71,5 +71,8 @@ with open(sys.argv[2], 'w') as ofile:
         ofile.write("PMD_ACCESS_ETH={0:s}\n".format(pmd_vm_eth))
         # for access port, use the same core for both threads
         ofile.write("PMD_ACCESS_DPDK={0:s}\n".format(pmd_vm_eth))
+
+        #resreve one core for lcore
+        ofile.write("OVS_LCORE={0:s}\n".format(core_list.pop(0)))
+
  
-    

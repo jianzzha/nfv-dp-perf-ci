@@ -1,6 +1,9 @@
 #!/usr/bin/bash
 vm_image_file=/tmp/nfv/nfv.qcow2
 vm_repo_file=/tmp/nfv/all.repo
+yum install -y libguestfs-tools-c
+export LIBGUESTFS_BACKEND=direct
+
 mkdir -p /tmp/nfv/
 wget -O ${vm_image_file} http://perf20.perf.lab.eng.bos.redhat.com:8080/images/rhel-server-7.5-x86_64-kvm.qcow2
 wget -O ${vm_repo_file} http://perf20.perf.lab.eng.bos.redhat.com:8080/images/all.repo 
@@ -8,11 +11,15 @@ wget -O ${vm_repo_file} http://perf20.perf.lab.eng.bos.redhat.com:8080/images/al
 #modify image to use persistent interface naming
 virt-edit -a ${vm_image_file} -e "s/net.ifnames=0/net.ifnames=1/g" /boot/grub2/grub.cfg || error "virt-edit failed"
 
-#assume vm dhco port is always ens3
+#assume vm net0 port is either ens3(dpdk) or enp1s0(sriov)
 #it is ok the move fails in case this is not a new it was moved before
-virt-customize -a ${vm_image_file} --run-command "mv /etc/sysconfig/network-scripts/ifcfg-eth0 /etc/sysconfig/network-scripts/ifcfg-ens3" 2>/dev/null
+#virt-customize -a ${vm_image_file} --run-command "mv /etc/sysconfig/network-scripts/ifcfg-eth0 /etc/sysconfig/network-scripts/ifcfg-ens3" 2>/dev/null
+virt-customize -a ${vm_image_file} --copy /etc/sysconfig/network-scripts/ifcfg-eth0:/etc/sysconfig/network-scripts/ifcfg-ens3
+virt-customize -a ${vm_image_file} --copy /etc/sysconfig/network-scripts/ifcfg-eth0:/etc/sysconfig/network-scripts/ifcfg-enp1s0
 #but if the following fail then we have to bail out
 virt-edit -a ${vm_image_file} -e "s/eth0/ens3/g" /etc/sysconfig/network-scripts/ifcfg-ens3 || error "virt-edit failed"
+virt-edit -a ${vm_image_file} -e "s/eth0/enp1s0/g" /etc/sysconfig/network-scripts/ifcfg-enp1s0 || error "virt-edit failed"
+
 # at this time, virt-cat and virt-ls can be used to doublecheck the change we made on the image
 
 # set up password for console logon, this can be done in cloud init as well
