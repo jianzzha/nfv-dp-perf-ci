@@ -6,12 +6,12 @@
     - vars.yaml
   tasks:
     - name: Create target directory
-      file: path=/home/stack/templates/{{TEST_ITEM}}/nic-configs/ state=directory mode=0755
+      file: path=/home/stack/templates-ci/{{TEST_ITEM}}/nic-configs/ state=directory mode=0755
 
-    - name: copy overcloud deployment templates 
+    - name: copy overcloud deployment templates
       template:
         src: "templates/{{TEST_ITEM}}/{{item.src}}"
-        dest: "/home/stack/templates/{{TEST_ITEM}}/{{item.dest}}"
+        dest: "/home/stack/templates-ci/{{TEST_ITEM}}/{{item.dest}}"
         owner: stack
         group: stack
       with_items:
@@ -28,5 +28,37 @@
         - src: post-install.yaml
           dest: post-install.yaml
 
- 
+    - name: disable TunedProfileName
+      command: sed -i -e 's/TunedProfileName/#TunedProfileName/' /home/stack/templates-ci/{{TEST_ITEM}}/environment.yaml
+      when: FIX_TUNED_AFTER_DEPLOY | bool
+
+    - name: install script to fix tuned after overcloud deploy
+      template:
+        src: templates/fix_tuned_after_deploy.sh.j2
+        dest: /home/stack/templates-ci/{{TEST_ITEM}}/fix_tuned_after_deploy.sh
+        mode: 0755
+
+    - name: install ansible
+      yum:
+        name: ansible
+        state: present
+      become: yes
+
+    - shell: chmod u+x deploy.sh; ./deploy.sh > deploy.output
+      args:
+        chdir: /home/stack/templates-ci/{{TEST_ITEM}}
+
+    - fetch:
+        src: /home/stack/templates-ci/{{TEST_ITEM}}/deploy.output
+        dest: deploy.output
+        flat: yes
+
+    - shell: ./fix_tuned_after_deploy.sh > fix_tuned.output
+      args:
+        chdir: /home/stack/templates-ci/{{TEST_ITEM}}
+
+    - fetch:
+        src: /home/stack/templates-ci/{{TEST_ITEM}}/fix_tuned.output
+        dest: fix_tuned.output
+        flat: yes
 

@@ -40,8 +40,51 @@ VALIDATION_TIME: ${VALIDATION_TIME}
 FLOWS: ${FLOWS}
 TREX_PCI_ADDR_NIC_1: ${TREX_PCI_ADDR_NIC_1}
 TREX_PCI_ADDR_NIC_2: ${TREX_PCI_ADDR_NIC_2}
+FIX_TUNED_AFTER_DEPLOY: ${FIX_TUNED_AFTER_DEPLOY}
+CPU_ALLOCATION: ${CPU_ALLOCATION}
+ISOLATED_CPU_LIST: ${ISOLATED_CPU_LIST}
+NOVA_CPU_LIST: ${NOVA_CPU_LIST}
+REPIN_OVS_PMD: ${REPIN_OVS_PMD}
+REPIN_EMULATOR: ${REPIN_EMULATOR}
+PMD_ACCESS_ETH: ${PMD_ACCESS_ETH}
+PMD_ACCESS_DPDK: ${PMD_ACCESS_DPDK}
+PMD_DATA_ETH0: ${PMD_DATA_ETH0}
+PMD_DATA_DPDK0: ${PMD_DATA_DPDK0}
+PMD_DATA_ETH1: ${PMD_DATA_ETH1}
+PMD_DATA_DPDK1: ${PMD_DATA_DPDK1}
 
 EOF
 
-cat vars.yaml | sed -e '/---/d' -e 's/: /=/' > parameters
+chmod u+x cpu_allocation.py
+if [[ ${CPU_ALLOCATION} == "same_as_trex" ]]; then
+    ansible-playbook -i hosts -e "baremetal=trafficgen" get_cpuinfo.yaml
+elif [[ ${CPU_ALLOCATION} == "same_as_undercloud" ]]; then
+    ansible-playbook -i hosts -e "baremetal=undercloud" get_cpuinfo.yaml
+fi
+ 
+if [[ ${CPU_ALLOCATION} != "manual" ]]; then
+    ./cpu_allocation.py ci_sysinfo.yaml cpu_resource.out
+    source cpu_resource.out
+    sed -i -e "s/ISOLATED_CPU_LIST: .*/ISOLATED_CPU_LIST: ${ISOLATED_CPU_LIST}/" vars.yaml
+    sed -i -e "s/NOVA_CPU_LIST: .*/NOVA_CPU_LIST: ${NOVA_CPU_LIST}/" vars.yaml
 
+    # decide if hyperthreading enabled based on how many thread per core collected from remote
+    if [[ ${THREAD_PER_CORE} == "2" ]]; then
+        ENABLE_HT=true
+    else
+        ENABLE_HT=false
+    fi
+    sed -i -e "s/ENABLE_HT: .*/ENABLE_HT: ${ENABLE_HT}/" vars.yaml
+
+    if [[ ${PMD_DATA_ETH0:-x} != 'x' ]]; then
+        sed -i -e "s/PMD_ACCESS_ETH: .*/PMD_ACCESS_ETH: ${PMD_ACCESS_ETH}/" vars.yaml
+        sed -i -e "s/PMD_ACCESS_DPDK: .*/PMD_ACCESS_DPDK: ${PMD_ACCESS_DPDK}/" vars.yaml
+        sed -i -e "s/PMD_DATA_ETH0: .*/PMD_DATA_ETH0: ${PMD_DATA_ETH0}/" vars.yaml
+        sed -i -e "s/PMD_DATA_DPDK0: .*/PMD_DATA_DPDK0: ${PMD_DATA_DPDK0}/" vars.yaml
+        sed -i -e "s/PMD_DATA_ETH1: .*/PMD_DATA_ETH1: ${PMD_DATA_ETH1}/" vars.yaml
+        sed -i -e "s/PMD_DATA_DPDK1: .*/PMD_DATA_DPDK1: ${PMD_DATA_DPDK1}/" vars.yaml
+    fi
+fi
+
+cat vars.yaml | sed -e '/---/d' -e 's/: /=/' > parameters
+ 

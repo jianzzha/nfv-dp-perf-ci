@@ -22,7 +22,7 @@ traffic_gen_dst_slot=01:00.1
 # traffic_direction: bidirec | unidirec | revunidirec
 traffic_direction="bidirec"
 repin_ovs_nonpmd=false
-repin_kvm_emulator=false
+repin_kvm_emulator={{REPIN_EMULATOR}}
 # routing: vpp | testpmd | testpmd-sriov
 routing="testpmd"
 # testpmd_fwd: mac|io|macswap
@@ -41,17 +41,17 @@ ftrace_vm="n"
 # clean up instances after test?
 cleanup=false
 pbench_report_prefix="2hour-isolcpu-OSP12-direct-srcip_flows"
-enable_HT=true
+enable_HT={{ENABLE_HT}}
 enable_multi_queue=false
-repin_ovs_pmd=true
+repin_ovs_pmd={{REPIN_OVS_PMD}}
 # cat /sys/class/net/<nic>/device/numa_node to check numa node
 # the core list may change based on the nic numa used
 # keep in mind, pmd_vm_eth0/pmd_dpdk2 handles instance access port; 
 # pmd_vm_eth1/pmd_dpdk0 pmd_vm_eth2/pmd_dpdk1 handles data port
-pmd_vm_eth0=1
-pmd_vm_eth1=2
-pmd_vm_eth2=4
-pmd_dpdk0=26
-pmd_dpdk1=28
-pmd_dpdk2=3
+pmd_vm_eth0={{PMD_ACCESS_ETH}}
+pmd_vm_eth1={{PMD_DATA_ETH0}}
+pmd_vm_eth2={{PMD_DATA_ETH1}}
+pmd_dpdk0={{PMD_DATA_DPDK0}}
+pmd_dpdk1={{PMD_DATA_DPDK1}}
+pmd_dpdk2={{PMD_ACCESS_DPDK}}
 spare_cores=""

@@ -1,0 +1,21 @@
+#/bin/bash
+
+echo fix tuned profile
+ssh root@compute-0  "grep -q '^isolated_cores' /etc/tuned/cpu-partitioning-variables.conf && sed -i 's/^isolated_cores.*/isolated_cores={{ISOLATED_CPU_LIST}}/' /etc/tuned/cpu-partitioning-variables.conf ||  echo 'isolated_cores={{ISOLATED_CPU_LIST}}' >> /etc/tuned/cpu-partitioning-variables.conf"
+
+ssh root@compute-0 "tuned-adm profile cpu-partitioning"
+
+echo reboot compute node
+ssh root@compute-0 reboot
+
+echo wait for compute node come back
+sleep 60
+for n in $(seq  90); do
+  reachable=1
+  timeout 1 bash -c "cat < /dev/null > /dev/tcp/compute-0/22" || reachable=0
+  if [ $reachable -eq 1 ]; then
+    break
+  fi
+  sleep 5
+done
+
