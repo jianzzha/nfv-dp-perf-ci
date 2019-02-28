@@ -1,4 +1,14 @@
 ---
+- hosts: undercloud
+  gather_facts: false
+  remote_user: root
+  tasks:
+  - name: install ssh for stack 
+    authorized_key:
+      user: stack 
+      state: present
+      key: "{{ lookup('file', lookup('env','HOME') + '/.ssh/id_rsa.pub') }}"
+
 - hosts: undercloud 
   gather_facts: false
   vars_files:

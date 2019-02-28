@@ -2,8 +2,8 @@
 
 DOCUMENTATION = '''
 ---
-module: set_bios_attr
-short_description: set dell bios attributes
+module: set_boot_order
+short_description: set dell boot order 
 options:
   idrac:
     description:
@@ -17,9 +17,9 @@ options:
     description:
       - Password for the given 'username'
     required: true
-  key_value_pairs:
+  boot_devices:
     description:
-      - dict of key:value pairs 
+      - list of boot devices 
     required: true
 '''
 
@@ -29,11 +29,15 @@ EXAMPLES = '''
     idrac: "192.168.1.1"
     username: "root"
     password: "admin1234"
-    key_value_pairs:
-      LogicalProc: Enabled
-      PowerSaver: Disabled
-      ProcVirtualization: Enabled
-      SriovGlobalEnable: Enabled
+    boot_devices: 
+      - Index: 0
+        Enabled: true
+        Id: BIOS.Setup.1-1#BootSeq#NIC.Integrated.1-3-1#b2401d51f8600b7a76c243bea93fbc17
+        Name: NIC.Integrated.1-3-1
+      - Index: 1
+        Enabled: true
+        Id: BIOS.Setup.1-1#BootSeq#HardDisk.List.1-1#c9203080df84781e2ca3d512883dee6f
+        Name: Optical.SATAEmbedded.J-1 
 '''
 
 RETURN = '''
@@ -58,18 +62,21 @@ def main():
             idrac=dict(required=True),
             username=dict(required=True),
             password=dict(required=True, no_log=True),
-            key_value_pairs=dict(required=True)
+            boot_devices=dict(required=True)
         ),
         supports_check_mode=False
     )
     idrac_ip = module.params['idrac']
     idrac_username = module.params["username"]
     idrac_password = module.params["password"]
-    key_value_pairs_str = module.params["key_value_pairs"]
-    key_value_pairs_str = re.sub(r'\'', '"', key_value_pairs_str)
-    key_value_pairs_str = re.sub(r'True', 'true', key_value_pairs_str)
-    key_value_pairs_str = re.sub(r'False', 'false', key_value_pairs_str)
-    key_value_pairs = json.loads(key_value_pairs_str)
+    boot_devices_str = module.params["boot_devices"]
+    #first convert ' to " per json spec
+    boot_devices_str = re.sub(r'\'', '"', boot_devices_str)
+    # next convert True to true, False to false per json spec
+    boot_devices_str = re.sub(r'True', 'true', boot_devices_str)
+    boot_devices_str = re.sub(r'False', 'false', boot_devices_str)
+    boot_devices = json.loads(boot_devices_str)
+
 
     tries = 3
     for round in range(tries):
@@ -86,29 +93,46 @@ def main():
         module.fail_json(msg="Incompatible iDRAC version")
 
     data = response.json()
-    payload = {"Attributes":{}}
-    for key in key_value_pairs:
-        # only update the setting if current value is different
-        if data['Attributes'][key] != key_value_pairs[key]:
-            payload["Attributes"][key] = key_value_pairs[key] 
-    
-    #if nothing to update, skip
-    if len(payload["Attributes"]) == 0:
-        module.exit_json(changed=False, msg="nothing to change")
+    current_boot_mode = data[u'Attributes']["BootMode"]
 
-    url = 'https://%s/redfish/v1/Systems/System.Embedded.1/Bios/Settings' % idrac_ip
-    headers = {'content-type': 'application/json'}
     for round in range(tries):
         try:
-            response = requests.patch(url, data=json.dumps(payload), headers=headers, verify=False, auth=(idrac_username, idrac_password))
+            response = requests.get('https://%s/redfish/v1/Systems/System.Embedded.1/BootSources' % idrac_ip,verify=False,auth=(idrac_username, idrac_password))
         except requests.exceptions.SSLError:
             continue
         else:
             break
 
+    data = response.json()
+    if data[u'Attributes'] == {}:
+        module.fail_json(msg="no %s boot order devices detected for iDRAC IP %s" % (current_boot_mode,idrac_ip)) 
+
+    if current_boot_mode == "Uefi":
+        boot_seq = "UefiBootSeq"
+    else:
+        boot_seq = "BootSeq"
+
+    current_boot_devices = data[u'Attributes'][boot_seq]
+    # update the boot order only if required is different than current boot order
+    if any(x !=y for x, y in zip(current_boot_devices, boot_devices)):
+        pass
+    else:
+        # if current boot order list is equal to required, do nothing
+        module.exit_json(changed=False, msg="nothing to change")
+
+    url = 'https://%s/redfish/v1/Systems/System.Embedded.1/BootSources/Settings' % idrac_ip
+    payload = {'Attributes': {boot_seq:boot_devices}}
+    headers = {'content-type': 'application/json'}
+    for round in range(tries):
+        try:
+            response = requests.patch(url, data=json.dumps(payload), headers=headers, verify=False,auth=(idrac_username, idrac_password))
+        except requests.exceptions.SSLError:
+            continue
+        else:
+            break
     statusCode = response.status_code
     if statusCode != 200:
-        module.fail_json(msg="BIOS setting failed with error code %s, details: %s" % (statusCode, str(response.__dict__)))
+        module.fail_json(msg="Failed to change boot device error code %s, details: %s" % (statusCode, str(response.__dict__)))
 
     url = 'https://%s/redfish/v1/Managers/iDRAC.Embedded.1/Jobs' % idrac_ip
     payload = {"TargetSettingsURI":"/redfish/v1/Systems/System.Embedded.1/Bios/Settings"}
@@ -123,11 +147,10 @@ def main():
 
     statusCode = response.status_code
     if statusCode != 200:
-        module.fail_json(msg="Create BIOS setting Job failed with error code %s" % statusCode)    
+        module.fail_json(msg="Create BIOS setting Job failed with error code %s" % statusCode)
     d=str(response.__dict__)
     z=re.search("JID_.+?,",d).group()
     job_id=re.sub("[,']","",z)
-
     while True:
         try:
             req = requests.get('https://%s/redfish/v1/Managers/iDRAC.Embedded.1/Jobs/%s' % (idrac_ip, job_id), auth=(idrac_username, idrac_password), verify=False)
@@ -138,13 +161,11 @@ def main():
         if statusCode != 200:
             module.fail_json(msg="check job status failed with code %s, detail: %s" %(statusCode, data))
         if data[u'Message'] == "Task successfully scheduled.":
-            module.exit_json(changed=True, result="success", msg="reboot required to complete") 
+            module.exit_json(changed=True, result="success", msg="reboot required to complete")
         else:
-            time.sleep(10) 
+            time.sleep(10)
 
 
 if __name__ == '__main__':
     main()
-    
-
 
