@@ -21,7 +21,8 @@ thread_per_core = int(cfg["THREAD_PER_CORE"])
 
 # build nova_vcpu list
 nova_vcpu_list = []
-iter = 3
+# iterate 4 times to get 3 cores for vcpu and 1 core for emulator
+iter = 4
 if thread_per_core == 2:
     cpu0_siblings_list = cfg["CPU0_SIBLINGS"].split(',')
     siblings_distance = int(cpu0_siblings_list[1]) - int(cpu0_siblings_list[0])
