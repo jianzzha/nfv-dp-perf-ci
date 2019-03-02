@@ -19,7 +19,6 @@ if [[ ${TESTBED:-x} != 'x' ]]; then
 fi
 
 cat << EOF >> vars.yaml
----
 DISABLE_CVE: ${DISABLE_CVE}
 TEST_ITEM: ${TEST_ITEM}
 UNDERCLOUD: ${UNDERCLOUD}
