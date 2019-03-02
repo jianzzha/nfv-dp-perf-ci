@@ -13,8 +13,9 @@ if [[ ${TESTBED:-x} == 'x' ]]; then
     exit 1
 fi
 
-if [[ ${TESTBED} == 'alias' ]]; then
-   cp files/alias.yaml vars.yaml
+# if testbed is defined, use that testbed spec as the base var.yaml
+if [[ ${TESTBED:-x} != 'x' ]]; then
+   cp files/${TESTBED}.yaml vars.yaml
 fi
 
 cat << EOF >> vars.yaml
