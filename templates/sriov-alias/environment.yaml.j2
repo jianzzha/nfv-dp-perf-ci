@@ -69,7 +69,7 @@ parameter_defaults:
     - devname: "{{DATA_NIC_2}}"
       physical_network: "sriov1"
 
-  NeutronSupportedPCIVendorDevs: ['8086:158b', '8086:158b']
+  NeutronSupportedPCIVendorDevs: ['{{DATA_NIC_VENDOR}}', '{{DATA_NIC_VENDOR}}']
   NeutronPhysicalDevMappings: "sriov0:{{DATA_NIC_1}},sriov1:{{DATA_NIC_2}}"
   NeutronSriovNumVFs: "{{DATA_NIC_1}}:8,{{DATA_NIC_2}}:8"
 

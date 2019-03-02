@@ -52,28 +52,28 @@ with open(sys.argv[2], 'w') as ofile:
     ofile.write("NOVA_CPU_LIST={0:s}\n".format(','.join(nova_vcpu_list)))
 
     # in case of ovs-pmd repin, let's get that list as well
-    if vars["TEST_ITEM"] == "dpdk" and vars["REPIN_OVS_PMD"] == "true":
+    if vars["TEST_ITEM"] == "dpdk" and vars["REPIN_OVS_PMD"]:
         for i in range(2):
             pmd_vm_eth = core_list.pop(0)
-            ofile.write("PMD_DATA_ETH{0:s}={1:s}\n".format(i, pmd_vm_eth))
+            ofile.write("PMD_DATA_ETH{0}={1}\n".format(i, pmd_vm_eth))
             if thread_per_core == 2:
                 pmd_dpdk = str(int(pmd_vm_eth) + siblings_distance)
                 pmd_dpdk_index = core_list.index(pmd_dpdk)
                 core_list.pop(pmd_dpdk_index)
-                ofile.write("PMD_DATA_DPDK{0:s}={1:s}\n".format(i, pmd_dpdk))
+                ofile.write("PMD_DATA_DPDK{0}={1}\n".format(i, pmd_dpdk))
             else:
-                ofile.write("PMD_DATA_DPDK{0:s}={1:s}\n".format(i, pmd_vm_eth))
+                ofile.write("PMD_DATA_DPDK{0}={1}\n".format(i, pmd_vm_eth))
         access_numa = int(cfg["ACCESS_NIC_NUMA"])
         if access_numa == numa:
             access_core_list = core_list
         else:
             access_core_list = cfg["AVAILABLE_ACCESS_CORES"].split(',')
         pmd_vm_eth = access_core_list.pop(0)
-        ofile.write("PMD_ACCESS_ETH={0:s}\n".format(pmd_vm_eth))
+        ofile.write("PMD_ACCESS_ETH={0}\n".format(pmd_vm_eth))
         # for access port, use the same core for both threads
-        ofile.write("PMD_ACCESS_DPDK={0:s}\n".format(pmd_vm_eth))
+        ofile.write("PMD_ACCESS_DPDK={0}\n".format(pmd_vm_eth))
 
         #resreve one core for lcore
-        ofile.write("OVS_LCORE={0:s}\n".format(core_list.pop(0)))
+        ofile.write("OVS_LCORE={0}\n".format(core_list.pop(0)))
 
  

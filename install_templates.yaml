@@ -77,6 +77,9 @@
         state: present
       become: yes
 
+    - name: END
+      meta: end_play
+
     - shell: chmod u+x deploy.sh; ./deploy.sh > deploy.output
       args:
         chdir: /home/stack/templates-ci/{{TEST_ITEM}}

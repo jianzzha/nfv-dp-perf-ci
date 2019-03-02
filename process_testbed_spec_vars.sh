@@ -8,14 +8,12 @@ echo "${UNDERCLOUD} ansible_user=root ansible_ssh_pass=${SSH_PASSWORD}" | tee -a
 echo "[trafficgen]" | tee -a hosts
 echo "${TREX_HOST} ansible_user=root ansible_ssh_pass=${SSH_PASSWORD}" | tee -a hosts
 
-if [[ ${TESTBED:-x} == 'x' ]]; then
-    echo "var TESTBED not defined!"
-    exit 1
-fi
-
 # if testbed is defined, use that testbed spec as the base var.yaml
 if [[ ${TESTBED:-x} != 'x' ]]; then
    cp files/${TESTBED}.yaml vars.yaml
+else
+    echo "var TESTBED not defined!"
+    exit 1
 fi
 
 cat << EOF >> vars.yaml
@@ -37,6 +35,7 @@ SEARCH_TIME: ${SEARCH_TIME}
 VALIDATION_TIME: ${VALIDATION_TIME}
 FLOWS: ${FLOWS}
 FIX_TUNED_AFTER_DEPLOY: ${FIX_TUNED_AFTER_DEPLOY}
+TESTBED: ${TESTBED}
 CPU_ALLOCATION: ${CPU_ALLOCATION}
 ENABLE_HT: ${ENABLE_HT}
 REPIN_OVS_PMD: ${REPIN_OVS_PMD}
@@ -76,6 +75,12 @@ if [[ ${CPU_ALLOCATION} != "manual" ]]; then
         sed -i -e "s/PMD_CORE_LIST: .*/PMD_CORE_LIST: ${PMD_DATA_ETH0},${PMD_DATA_ETH1},${PMD_DATA_DPDK0},${PMD_DATA_DPDK1}/" vars.yaml
         sed -i -e "s/OVS_LCORE: .*/OVS_LCORE: ${OVS_LCORE}/" vars.yaml
     fi
+    data_nic_vendor=$(sed -n -r 's/DATA_NIC_VENDOR: (.*)/\1/p' ci_sysinfo.yaml)
+    # data_nic_vendor should include more than 2 double quotes
+    if [[ ${#data_nic_vendor} -gt 2 ]]; then
+        sed -i -e "s/DATA_NIC_VENDOR: .*/DATA_NIC_VENDOR: ${data_nic_vendor}/" vars.yaml
+    fi
+    
 fi
 
 cat vars.yaml | sed -e '/---/d' -e 's/: /=/' > parameters

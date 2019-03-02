@@ -10,6 +10,7 @@
     - shell: |
         product_info=$(dmidecode -s 'system-product-name')
         data_nic_numa=$(cat /sys/class/net/{{DATA_NIC_1}}/device/numa_node)
+        data_nic_vendor=$(cat /sys/class/net/{{DATA_NIC_1}}/device/uevent | sed -n -r 's/PCI_ID=(.*)/\1/p')
         access_nic_numa=$(cat /sys/class/net/{{COMPUTE_ACCESS_PORT}}/device/numa_node)
         available_data_cores=$(lscpu | sed -r -n "s/NUMA node${data_nic_numa} CPU\(s\):\s+[0-9]+,([,0-9]+)/\1/p")
         available_access_cores=$(lscpu | sed -r -n "s/NUMA node${access_nic_numa} CPU\(s\):\s+[0-9]+,([,0-9]+)/\1/p")
@@ -17,6 +18,7 @@
         cpu0_siblings_list=$(cat /sys/bus/cpu/devices/cpu0/topology/thread_siblings_list)
         echo SYSTEM_RUNNING_ON: ${product_info} > {{ofile}}
         echo DATA_NIC_NUMA: ${data_nic_numa} >> {{ofile}}
+        echo DATA_NIC_VENDOR: \"${data_nic_vendor}\" >> {{ofile}}
         echo ACCESS_NIC_NUMA: ${access_nic_numa} >> {{ofile}}
         echo AVAILABLE_DATA_CORES: ${available_data_cores} >> {{ofile}}
         echo AVAILABLE_ACCESS_CORES: ${available_access_cores} >> {{ofile}}
