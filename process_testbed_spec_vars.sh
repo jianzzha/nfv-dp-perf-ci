@@ -7,6 +7,8 @@ echo "[undercloud]" | tee -a hosts
 echo "${UNDERCLOUD} ansible_user=root ansible_ssh_pass=${SSH_PASSWORD}" | tee -a hosts
 echo "[trafficgen]" | tee -a hosts
 echo "${TREX_HOST} ansible_user=root ansible_ssh_pass=${SSH_PASSWORD}" | tee -a hosts
+echo "[idrac]" | tee -a hosts
+echo "localhost ansible_connection=local" | tee -a hosts
 
 # if testbed is defined, use that testbed spec as the base var.yaml
 if [[ ${TESTBED:-x} != 'x' ]]; then
@@ -40,6 +42,11 @@ CPU_ALLOCATION: ${CPU_ALLOCATION}
 ENABLE_HT: ${ENABLE_HT}
 REPIN_OVS_PMD: ${REPIN_OVS_PMD}
 REPIN_EMULATOR: ${REPIN_EMULATOR}
+UNDERCLOUD_IDRAC: ${UNDERCLOUD_IDRAC:-"NA"}
+CONTROLLER_IDRAC: ${CONTROLLER_IDRAC:-"NA"}
+COMPUTE_IDRAC: ${COMPUTE_IDRAC:-"NA"}
+IDRAC_USER: ${IDRAC_USER}
+IDRAC_PASSWORD: ${IDRAC_PASSWORD}
 EOF
 
 chmod u+x cpu_allocation.py

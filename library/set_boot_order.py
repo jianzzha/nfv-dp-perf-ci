@@ -25,7 +25,7 @@ options:
 
 EXAMPLES = '''
 
-- set_bios_attr:
+- set_boot_order:
     idrac: "192.168.1.1"
     username: "root"
     password: "admin1234"
