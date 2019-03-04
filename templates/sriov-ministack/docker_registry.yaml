@@ -1,0 +1,80 @@
+# Generated with the following on 2019-02-05T20:05:24.500101
+#
+#   openstack overcloud container image prepare --namespace=docker-registry.engineering.redhat.com/rhosp13 --env-file=/home/stack/templates/skylake-sriov/docker_registry.yaml --prefix=openstack --tag=2018-10-18.1 -e /usr/share/openstack-tripleo-heat-templates/environments/neutron-sriov.yaml -r /home/stack/templates/skylake-sriov/roles_data.yaml
+#
+
+parameter_defaults:
+  DockerAodhApiImage: docker-registry.engineering.redhat.com/rhosp13/openstack-aodh-api:2018-10-18.1
+  DockerAodhConfigImage: docker-registry.engineering.redhat.com/rhosp13/openstack-aodh-api:2018-10-18.1
+  DockerAodhEvaluatorImage: docker-registry.engineering.redhat.com/rhosp13/openstack-aodh-evaluator:2018-10-18.1
+  DockerAodhListenerImage: docker-registry.engineering.redhat.com/rhosp13/openstack-aodh-listener:2018-10-18.1
+  DockerAodhNotifierImage: docker-registry.engineering.redhat.com/rhosp13/openstack-aodh-notifier:2018-10-18.1
+  DockerCeilometerCentralImage: docker-registry.engineering.redhat.com/rhosp13/openstack-ceilometer-central:2018-10-18.1
+  DockerCeilometerComputeImage: docker-registry.engineering.redhat.com/rhosp13/openstack-ceilometer-compute:2018-10-18.1
+  DockerCeilometerConfigImage: docker-registry.engineering.redhat.com/rhosp13/openstack-ceilometer-central:2018-10-18.1
+  DockerCeilometerNotificationImage: docker-registry.engineering.redhat.com/rhosp13/openstack-ceilometer-notification:2018-10-18.1
+  DockerCinderApiImage: docker-registry.engineering.redhat.com/rhosp13/openstack-cinder-api:2018-10-18.1
+  DockerCinderConfigImage: docker-registry.engineering.redhat.com/rhosp13/openstack-cinder-api:2018-10-18.1
+  DockerCinderSchedulerImage: docker-registry.engineering.redhat.com/rhosp13/openstack-cinder-scheduler:2018-10-18.1
+  DockerCinderVolumeImage: docker-registry.engineering.redhat.com/rhosp13/openstack-cinder-volume:2018-10-18.1
+  DockerClustercheckConfigImage: docker-registry.engineering.redhat.com/rhosp13/openstack-mariadb:2018-10-18.1
+  DockerClustercheckImage: docker-registry.engineering.redhat.com/rhosp13/openstack-mariadb:2018-10-18.1
+  DockerCrondConfigImage: docker-registry.engineering.redhat.com/rhosp13/openstack-cron:2018-10-18.1
+  DockerCrondImage: docker-registry.engineering.redhat.com/rhosp13/openstack-cron:2018-10-18.1
+  DockerGlanceApiConfigImage: docker-registry.engineering.redhat.com/rhosp13/openstack-glance-api:2018-10-18.1
+  DockerGlanceApiImage: docker-registry.engineering.redhat.com/rhosp13/openstack-glance-api:2018-10-18.1
+  DockerGnocchiApiImage: docker-registry.engineering.redhat.com/rhosp13/openstack-gnocchi-api:2018-10-18.1
+  DockerGnocchiConfigImage: docker-registry.engineering.redhat.com/rhosp13/openstack-gnocchi-api:2018-10-18.1
+  DockerGnocchiMetricdImage: docker-registry.engineering.redhat.com/rhosp13/openstack-gnocchi-metricd:2018-10-18.1
+  DockerGnocchiStatsdImage: docker-registry.engineering.redhat.com/rhosp13/openstack-gnocchi-statsd:2018-10-18.1
+  DockerHAProxyConfigImage: docker-registry.engineering.redhat.com/rhosp13/openstack-haproxy:2018-10-18.1
+  DockerHAProxyImage: docker-registry.engineering.redhat.com/rhosp13/openstack-haproxy:2018-10-18.1
+  DockerHeatApiCfnConfigImage: docker-registry.engineering.redhat.com/rhosp13/openstack-heat-api-cfn:2018-10-18.1
+  DockerHeatApiCfnImage: docker-registry.engineering.redhat.com/rhosp13/openstack-heat-api-cfn:2018-10-18.1
+  DockerHeatApiConfigImage: docker-registry.engineering.redhat.com/rhosp13/openstack-heat-api:2018-10-18.1
+  DockerHeatApiImage: docker-registry.engineering.redhat.com/rhosp13/openstack-heat-api:2018-10-18.1
+  DockerHeatConfigImage: docker-registry.engineering.redhat.com/rhosp13/openstack-heat-api:2018-10-18.1
+  DockerHeatEngineImage: docker-registry.engineering.redhat.com/rhosp13/openstack-heat-engine:2018-10-18.1
+  DockerHorizonConfigImage: docker-registry.engineering.redhat.com/rhosp13/openstack-horizon:2018-10-18.1
+  DockerHorizonImage: docker-registry.engineering.redhat.com/rhosp13/openstack-horizon:2018-10-18.1
+  DockerInsecureRegistryAddress:
+  - docker-registry.engineering.redhat.com
+  DockerIscsidConfigImage: docker-registry.engineering.redhat.com/rhosp13/openstack-iscsid:2018-10-18.1
+  DockerIscsidImage: docker-registry.engineering.redhat.com/rhosp13/openstack-iscsid:2018-10-18.1
+  DockerKeystoneConfigImage: docker-registry.engineering.redhat.com/rhosp13/openstack-keystone:2018-10-18.1
+  DockerKeystoneImage: docker-registry.engineering.redhat.com/rhosp13/openstack-keystone:2018-10-18.1
+  DockerMemcachedConfigImage: docker-registry.engineering.redhat.com/rhosp13/openstack-memcached:2018-10-18.1
+  DockerMemcachedImage: docker-registry.engineering.redhat.com/rhosp13/openstack-memcached:2018-10-18.1
+  DockerMysqlClientConfigImage: docker-registry.engineering.redhat.com/rhosp13/openstack-mariadb:2018-10-18.1
+  DockerMysqlConfigImage: docker-registry.engineering.redhat.com/rhosp13/openstack-mariadb:2018-10-18.1
+  DockerMysqlImage: docker-registry.engineering.redhat.com/rhosp13/openstack-mariadb:2018-10-18.1
+  DockerNeutronApiImage: docker-registry.engineering.redhat.com/rhosp13/openstack-neutron-server:2018-10-18.1
+  DockerNeutronConfigImage: docker-registry.engineering.redhat.com/rhosp13/openstack-neutron-server:2018-10-18.1
+  DockerNeutronDHCPImage: docker-registry.engineering.redhat.com/rhosp13/openstack-neutron-dhcp-agent:2018-10-18.1
+  DockerNeutronL3AgentImage: docker-registry.engineering.redhat.com/rhosp13/openstack-neutron-l3-agent:2018-10-18.1
+  DockerNeutronMetadataImage: docker-registry.engineering.redhat.com/rhosp13/openstack-neutron-metadata-agent:2018-10-18.1
+  DockerNeutronSriovImage: docker-registry.engineering.redhat.com/rhosp13/openstack-neutron-sriov-agent:2018-10-18.1
+  DockerNovaApiImage: docker-registry.engineering.redhat.com/rhosp13/openstack-nova-api:2018-10-18.1
+  DockerNovaComputeImage: docker-registry.engineering.redhat.com/rhosp13/openstack-nova-compute:2018-10-18.1
+  DockerNovaConductorImage: docker-registry.engineering.redhat.com/rhosp13/openstack-nova-conductor:2018-10-18.1
+  DockerNovaConfigImage: docker-registry.engineering.redhat.com/rhosp13/openstack-nova-api:2018-10-18.1
+  DockerNovaConsoleauthImage: docker-registry.engineering.redhat.com/rhosp13/openstack-nova-consoleauth:2018-10-18.1
+  DockerNovaLibvirtConfigImage: docker-registry.engineering.redhat.com/rhosp13/openstack-nova-compute:2018-10-18.1
+  DockerNovaLibvirtImage: docker-registry.engineering.redhat.com/rhosp13/openstack-nova-libvirt:2018-10-18.1
+  DockerNovaMetadataImage: docker-registry.engineering.redhat.com/rhosp13/openstack-nova-api:2018-10-18.1
+  DockerNovaPlacementConfigImage: docker-registry.engineering.redhat.com/rhosp13/openstack-nova-placement-api:2018-10-18.1
+  DockerNovaPlacementImage: docker-registry.engineering.redhat.com/rhosp13/openstack-nova-placement-api:2018-10-18.1
+  DockerNovaSchedulerImage: docker-registry.engineering.redhat.com/rhosp13/openstack-nova-scheduler:2018-10-18.1
+  DockerNovaVncProxyImage: docker-registry.engineering.redhat.com/rhosp13/openstack-nova-novncproxy:2018-10-18.1
+  DockerOpenvswitchImage: docker-registry.engineering.redhat.com/rhosp13/openstack-neutron-openvswitch-agent:2018-10-18.1
+  DockerPankoApiImage: docker-registry.engineering.redhat.com/rhosp13/openstack-panko-api:2018-10-18.1
+  DockerPankoConfigImage: docker-registry.engineering.redhat.com/rhosp13/openstack-panko-api:2018-10-18.1
+  DockerRabbitmqConfigImage: docker-registry.engineering.redhat.com/rhosp13/openstack-rabbitmq:2018-10-18.1
+  DockerRabbitmqImage: docker-registry.engineering.redhat.com/rhosp13/openstack-rabbitmq:2018-10-18.1
+  DockerRedisConfigImage: docker-registry.engineering.redhat.com/rhosp13/openstack-redis:2018-10-18.1
+  DockerRedisImage: docker-registry.engineering.redhat.com/rhosp13/openstack-redis:2018-10-18.1
+  DockerSwiftAccountImage: docker-registry.engineering.redhat.com/rhosp13/openstack-swift-account:2018-10-18.1
+  DockerSwiftConfigImage: docker-registry.engineering.redhat.com/rhosp13/openstack-swift-proxy-server:2018-10-18.1
+  DockerSwiftContainerImage: docker-registry.engineering.redhat.com/rhosp13/openstack-swift-container:2018-10-18.1
+  DockerSwiftObjectImage: docker-registry.engineering.redhat.com/rhosp13/openstack-swift-object:2018-10-18.1
+  DockerSwiftProxyImage: docker-registry.engineering.redhat.com/rhosp13/openstack-swift-proxy-server:2018-10-18.1

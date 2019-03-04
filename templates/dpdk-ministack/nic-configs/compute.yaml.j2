@@ -84,8 +84,8 @@ resources:
           params:
             $network_config:
               network_config:
-              - type: ovs_bridge 
-                name: br-control
+              - type: interface
+                name: {{DEPLOY_PORT}} 
                 use_dhcp: false
                 dns_servers: {get_param: DnsServers}
                 addresses:
@@ -98,33 +98,62 @@ resources:
                 - ip_netmask: 169.254.169.254/32
                   next_hop:
                     get_param: EC2MetadataIp
+
+              - type: interface 
+                name: {{COMPUTE_CONTROL_PORT}} 
+                use_dhcp: false
+
+              - type: vlan
+                device: {{COMPUTE_CONTROL_PORT}} 
+                use_dhcp: false
+                vlan_id: {get_param: InternalApiNetworkVlanID}
+                addresses:
+                - ip_netmask: {get_param: InternalApiIpSubnet}
+              - type: vlan
+                device: {{COMPUTE_CONTROL_PORT}}
+                use_dhcp: false
+                vlan_id: {get_param: TenantNetworkVlanID}
+                addresses:
+                - ip_netmask: {get_param: TenantIpSubnet}
+              - type: vlan
+                device: {{COMPUTE_CONTROL_PORT}}
+                use_dhcp: false
+                vlan_id: {get_param: StorageNetworkVlanID}
+                addresses:
+                - ip_netmask: {get_param: StorageIpSubnet}
+              - type: vlan
+                device: {{COMPUTE_CONTROL_PORT}} 
+                use_dhcp: false
+                vlan_id: {get_param: ExternalNetworkVlanID}
+                addresses:
+                - ip_netmask: {get_param: ExternalIpSubnet}
+              - type: ovs_user_bridge
+                name: br-link0
+                use_dhcp: false
                 members:
-                - type: interface 
-                  name: {{DEPLOY_PORT}} 
-                  primary: true
-                  use_dhcp: false
-                - type: vlan
-                  use_dhcp: false
-                  vlan_id: {get_param: InternalApiNetworkVlanID}
-                  addresses:
-                  - ip_netmask: {get_param: InternalApiIpSubnet}
-                - type: vlan
-                  use_dhcp: false
-                  vlan_id: {get_param: TenantNetworkVlanID}
-                  addresses:
-                  - ip_netmask: {get_param: TenantIpSubnet}
-                - type: vlan
-                  use_dhcp: false
-                  vlan_id: {get_param: StorageNetworkVlanID}
-                  addresses:
-                  - ip_netmask: {get_param: StorageIpSubnet}
-              - type: ovs_bridge 
+                - type: ovs_dpdk_port
+                  name: dpdk0
+                  members: 
+                  - type: interface
+                    name: {{DATA_NIC_1}}
+              - type: ovs_user_bridge
+                name: br-link1
+                use_dhcp: false
+                members:
+                - type: ovs_dpdk_port
+                  name: dpdk1
+                  members: 
+                  - type: interface
+                    name: {{DATA_NIC_2}}
+              - type: ovs_user_bridge
                 name: br-access
                 use_dhcp: false
                 members:
-                -
-                  type: interface
-                  name: {{COMPUTE_ACCESS_PORT}} 
+                - type: ovs_dpdk_port
+                  name: dpdk2
+                  members:
+                  - type: interface
+                    name: {{COMPUTE_ACCESS_PORT}}
 
 outputs:
   OS::stack_id:

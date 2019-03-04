@@ -1,4 +1,4 @@
-heat_template_version: queens 
+heat_template_version: queens
 
 parameters:
   ControlPlaneIp:
@@ -84,8 +84,8 @@ resources:
           params:
             $network_config:
               network_config:
-              - type: ovs_bridge 
-                name: br-control
+              - type: interface
+                name: {{DEPLOY_PORT}}
                 use_dhcp: false
                 dns_servers: {get_param: DnsServers}
                 addresses:
@@ -98,36 +98,50 @@ resources:
                 - ip_netmask: 169.254.169.254/32
                   next_hop:
                     get_param: EC2MetadataIp
-                members:
-                - type: interface 
-                  name: {{DEPLOY_PORT}} 
-                  primary: true
-                  use_dhcp: false
-                - type: vlan
-                  use_dhcp: false
-                  vlan_id: {get_param: InternalApiNetworkVlanID}
-                  addresses:
-                  - ip_netmask: {get_param: InternalApiIpSubnet}
-                - type: vlan
-                  use_dhcp: false
-                  vlan_id: {get_param: TenantNetworkVlanID}
-                  addresses:
-                  - ip_netmask: {get_param: TenantIpSubnet}
-                - type: vlan
-                  use_dhcp: false
-                  vlan_id: {get_param: StorageNetworkVlanID}
-                  addresses:
-                  - ip_netmask: {get_param: StorageIpSubnet}
+
+              - type: interface 
+                name: {{CONTROLLER_CONTROL_PORT}} 
+                use_dhcp: false
+
+              - type: vlan
+                device: {{CONTROLLER_CONTROL_PORT}}
+                use_dhcp: false
+                vlan_id: {get_param: InternalApiNetworkVlanID}
+                addresses:
+                - ip_netmask: {get_param: InternalApiIpSubnet}
+              - type: vlan
+                device: {{CONTROLLER_CONTROL_PORT}}
+                use_dhcp: false
+                vlan_id: {get_param: TenantNetworkVlanID}
+                addresses:
+                - ip_netmask: {get_param: TenantIpSubnet}
+              - type: vlan
+                device: {{CONTROLLER_CONTROL_PORT}}
+                use_dhcp: false
+                vlan_id: {get_param: ExternalNetworkVlanID}
+                addresses:
+                - ip_netmask: {get_param: ExternalIpSubnet}
+              - type: vlan
+                device: {{CONTROLLER_CONTROL_PORT}}
+                use_dhcp: false
+                vlan_id: {get_param: StorageNetworkVlanID}
+                addresses:
+                - ip_netmask: {get_param: StorageIpSubnet}
+              - type: vlan
+                device: {{CONTROLLER_CONTROL_PORT}}
+                use_dhcp: false
+                vlan_id: {get_param: StorageMgmtNetworkVlanID}
+                addresses:
+                - ip_netmask: {get_param: StorageMgmtIpSubnet}
               - type: ovs_bridge 
                 name: br-access
                 use_dhcp: false
                 members:
-                -
-                  type: interface
-                  name: {{COMPUTE_ACCESS_PORT}} 
+                - type: interface
+                  name: {{CONTROLLER_ACCESS_PORT}} 
 
 outputs:
   OS::stack_id:
     description: The OsNetConfigImpl resource.
-    value: 
+    value:
       get_resource: OsNetConfigImpl
