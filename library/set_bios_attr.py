@@ -21,6 +21,10 @@ options:
     description:
       - dict of key:value pairs 
     required: true
+  retries:
+    description:
+      - retry times in case url request fails
+    required: false
 '''
 
 EXAMPLES = '''
@@ -58,7 +62,8 @@ def main():
             idrac=dict(required=True),
             username=dict(required=True),
             password=dict(required=True, no_log=True),
-            key_value_pairs=dict(required=True)
+            key_value_pairs=dict(required=True),
+            retries=dict(required=False, default=3)
         ),
         supports_check_mode=False
     )
@@ -70,8 +75,8 @@ def main():
     key_value_pairs_str = re.sub(r'True', 'true', key_value_pairs_str)
     key_value_pairs_str = re.sub(r'False', 'false', key_value_pairs_str)
     key_value_pairs = json.loads(key_value_pairs_str)
-
-    tries = 3
+    tries = int(module.params["retries"])
+ 
     for round in range(tries):
         try:
             response = requests.get('https://%s/redfish/v1/Systems/System.Embedded.1/Bios' % idrac_ip, verify=False, auth=(idrac_username, idrac_password))

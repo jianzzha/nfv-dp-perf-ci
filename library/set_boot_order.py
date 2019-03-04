@@ -21,6 +21,10 @@ options:
     description:
       - list of boot devices 
     required: true
+  retries:
+    description:
+      - retry times in case url request fails
+    required: false
 '''
 
 EXAMPLES = '''
@@ -62,7 +66,8 @@ def main():
             idrac=dict(required=True),
             username=dict(required=True),
             password=dict(required=True, no_log=True),
-            boot_devices=dict(required=True)
+            boot_devices=dict(required=True),
+            retries=dict(required=False, default=3)
         ),
         supports_check_mode=False
     )
@@ -76,9 +81,8 @@ def main():
     boot_devices_str = re.sub(r'True', 'true', boot_devices_str)
     boot_devices_str = re.sub(r'False', 'false', boot_devices_str)
     boot_devices = json.loads(boot_devices_str)
+    tries = int(module.params["retries"])
 
-
-    tries = 3
     for round in range(tries):
         try:
             response = requests.get('https://%s/redfish/v1/Systems/System.Embedded.1/Bios' % idrac_ip, verify=False, auth=(idrac_username, idrac_password))

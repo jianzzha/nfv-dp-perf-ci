@@ -21,11 +21,15 @@ options:
     description:
       - dict of key:value pairs 
     required: true
+  retries:
+    description:
+      - retry times in case url request fails
+    required: false
 '''
 
 EXAMPLES = '''
 
-- set_bios_attr:
+- check_bios_setting:
     idrac: "192.168.1.1"
     username: "root"
     password: "admin1234"
@@ -33,7 +37,6 @@ EXAMPLES = '''
       LogicalProc: Enabled
       SriovGlobalEnable: Enabled
       ProcVirtualization: Enabled 
-    values: Enabled 
 '''
 
 RETURN = '''
@@ -58,7 +61,8 @@ def main():
             idrac=dict(required=True),
             username=dict(required=True),
             password=dict(required=True, no_log=True),
-            key_value_pairs=dict(required=True)
+            key_value_pairs=dict(required=True),
+            retries=dict(required=False, default=3)
         ),
         supports_check_mode=False
     )
@@ -66,8 +70,8 @@ def main():
     idrac_username = module.params["username"]
     idrac_password = module.params["password"]
     key_value_pairs = json.loads(re.sub(r'\'', '"', module.params["key_value_pairs"]))
+    tries = int(module.params["retries"])
 
-    tries = 3
     for round in range(tries):
         try:
             response = requests.get('https://%s/redfish/v1/Systems/System.Embedded.1/Bios' % idrac_ip, verify=False, auth=(idrac_username, idrac_password))
