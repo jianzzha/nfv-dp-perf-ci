@@ -38,28 +38,6 @@
           dest: disable-telemetry.yaml
         - src: post-install.yaml
           dest: post-install.yaml
-      when: TESTBED is not defined
-
-    - name: copy "{{TESTBED}}" specific deployment templates
-      template:
-        src: "templates/{{TEST_ITEM}}-{{TESTBED}}/{{item.src}}"
-        dest: "/home/stack/templates-ci/{{TEST_ITEM}}/{{item.dest}}"
-        owner: stack
-        group: stack
-      with_items:
-        - src: nic-configs/compute.yaml.j2
-          dest: nic-configs/compute.yaml
-        - src: nic-configs/controller.yaml.j2
-          dest: nic-configs/controller.yaml
-        - src: environment.yaml.j2
-          dest: environment.yaml
-        - src: deploy.sh.j2
-          dest: deploy.sh
-        - src: disable-telemetry.yaml
-          dest: disable-telemetry.yaml
-        - src: post-install.yaml
-          dest: post-install.yaml
-      when: TESTBED is defined
 
     - name: disable TunedProfileName
       command: sed -i -e 's/TunedProfileName/#TunedProfileName/' /home/stack/templates-ci/{{TEST_ITEM}}/environment.yaml
@@ -76,9 +54,6 @@
         name: ansible
         state: present
       become: yes
-
-    - name: END
-      meta: end_play
 
     - shell: chmod u+x deploy.sh; ./deploy.sh > deploy.output
       args:
