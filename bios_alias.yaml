@@ -27,7 +27,7 @@
         username: "{{IDRAC_USER}}"
         password: "{{IDRAC_PASSWORD}}"
         key_value_pairs:
-          LogicalProc: "{{Enabled if ENABLE_HT|bool else Disabled}}" 
+          LogicalProc: "{{'Enabled' if ENABLE_HT|bool else 'Disabled'}}" 
           ProcVirtualization: Enabled
           SriovGlobalEnable: Enabled
       register: bios_setting

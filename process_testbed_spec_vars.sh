@@ -49,6 +49,8 @@ IDRAC_USER: ${IDRAC_USER}
 IDRAC_PASSWORD: ${IDRAC_PASSWORD}
 EOF
 
+#ansible-playbook -i hosts bios_ministack.yaml
+
 chmod u+x cpu_allocation.py
 if [[ ${CPU_ALLOCATION} == "same_as_trex" ]]; then
     ansible-playbook -i hosts -e "baremetal=trafficgen" get_cpuinfo.yaml
