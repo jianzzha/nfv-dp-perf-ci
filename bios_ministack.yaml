@@ -4,7 +4,7 @@
   vars_files:
     - vars.yaml
   tasks:
-    - set_boot_order:
+    - drac_set_boot_order:
         idrac: "{{COMPUTE_IDRAC}}"
         username: "{{IDRAC_USER}}"
         password: "{{IDRAC_PASSWORD}}"
@@ -22,7 +22,7 @@
             Id: "BIOS.Setup.1-1#BootSeq#HardDisk.List.1-1#c9203080df84781e2ca3d512883dee6f" 
             Name: "HardDisk.List.1-1"
       when: COMPUTE_IDRAC != "NA" 
-    - set_bios_attr:
+    - drac_set_bios_attr:
         idrac: "{{COMPUTE_IDRAC}}"
         username: "{{IDRAC_USER}}"
         password: "{{IDRAC_PASSWORD}}"
@@ -32,13 +32,7 @@
           SriovGlobalEnable: Enabled
       register: bios_setting
       when: COMPUTE_IDRAC != "NA" 
-    - set_power_state:
-        idrac: "{{COMPUTE_IDRAC}}"
-        username: "{{IDRAC_USER}}"
-        password: "{{IDRAC_PASSWORD}}"
-        state: GracefulRestart
-      when: bios_setting is defined and bios_setting.changed
-    - set_boot_order:
+    - drac_set_boot_order:
         idrac: "{{CONTROLLER_IDRAC}}"
         username: "{{IDRAC_USER}}"
         password: "{{IDRAC_PASSWORD}}"

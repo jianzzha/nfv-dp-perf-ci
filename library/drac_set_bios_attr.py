@@ -47,11 +47,16 @@ ANSIBLE_METADATA = {'metadata_version': '1.1',
                     'status': ['preview'],
                     'supported_by': 'community'}
 
-import warnings
-from drac_utils import bios
-#from ansible.module_utils.drac_utils import bios 
-
+import warnings, sys, os
 from ansible.module_utils.basic import AnsibleModule
+
+try:
+    from ansible.module_utils.drac_utils import bios
+except ImportError:
+    # if drac_utils not importable via ansible, see if python can find it
+    util_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), os.pardir, "module_utils")
+    sys.path.append(util_path)
+    from drac_utils import bios 
 
 warnings.filterwarnings("ignore")
 
@@ -68,7 +73,8 @@ def main():
         supports_check_mode=False
     )
 
-    idrac = bios(module, "update_bios")
+    # /redfish/v1 may change in the future with newer redfish version
+    idrac = bios(module, "/redfish/v1", "update_bios")
     idrac.update_bios()
      
 
