@@ -1,0 +1,31 @@
+{
+    "nodes": [
+        {
+            "arch": "x86_64",
+            "cpu": "4",
+            "disk": "20",
+            "mac": [
+                "EC:F4:BB:CE:C9:CD"
+            ],
+            "memory": "16",
+            "pm_addr": "perf16-drac.perf.lab.eng.bos.redhat.com",
+            "pm_password": "100yard-",
+            "pm_type": "pxe_ipmitool",
+            "pm_user": "root"
+        },
+        {
+            "arch": "x86_64",
+            "cpu": "4",
+            "disk": "20",
+            "mac": [
+                "d0:94:66:41:5b:ea"
+            ],
+            "memory": "16",
+            "pm_addr": "perf150-drac.perf.lab.eng.bos.redhat.com",
+            "pm_password": "100yard-",
+            "pm_type": "pxe_ipmitool",
+            "pm_user": "root"
+        }
+    ]
+}
+

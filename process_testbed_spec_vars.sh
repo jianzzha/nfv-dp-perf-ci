@@ -49,7 +49,18 @@ IDRAC_USER: ${IDRAC_USER}
 IDRAC_PASSWORD: ${IDRAC_PASSWORD}
 EOF
 
-#ansible-playbook -i hosts bios_ministack.yaml
+if [[ ${TESTBED} != "ministack" ]]; then
+    # execept ministack, all other testbeds need CONTROLLER_IDRAC and COMPUTE_IDRAC
+    if [[ ${CONTROLLER_IDRAC:-"NA"} == "NA" || ${COMPUTE_IDRAC:-"NA"} == "NA" ]]; then
+        echo "Needs idrac info for controller and compute nodes"
+        exit 1
+    fi
+fi
+
+# take care of BIOS setting before proceeding 
+if [[ ${UPDATE_BIOS} == "True" ]]; then
+    ansible-playbook -i hosts bios_${TESTBED}.yaml
+fi
 
 chmod u+x cpu_allocation.py
 if [[ ${CPU_ALLOCATION} == "same_as_trex" ]]; then

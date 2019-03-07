@@ -1,0 +1,313 @@
+---
+#
+# Playbook deploying and setting up your undercloud for overcloud deployment 
+#
+# Tested against OSP 8/9/10/11/12 and single-nic-vlans config setup with private external network
+#
+
+# Tasks as root
+- hosts: localhost
+  connection: local
+  gather_facts: false
+  vars_files:
+    - vars.yaml
+  tasks:
+    - name: copy undercloud_vars.yml
+      template:
+        src: templates/undercloud_vars.yml.j2
+        dest: undercloud_vars.yaml
+
+- hosts: undercloud
+  gather_facts: true
+  vars_files:
+    - undercloud_vars.yaml 
+    - vars.yaml
+  remote_user: root
+  tasks:
+    - name: Disable epel
+      shell: rpm -e epel-release
+      ignore_errors: true
+
+    - name: Disable beaker repos
+      shell: rm -rf /etc/yum.repos.d/beaker-*
+
+    - name: Add custom repos
+      template:
+        src: "templates/undercloud-deploy.repo.j2"
+        dest: /etc/yum.repos.d/undercloud-deploy.repo
+      when: deploy_additional_repos
+
+    - name: Get rhos-release
+      get_url:
+        url: "{{rhos_release_rpm}}"
+        dest: /root/rhos-release.rpm
+        validate_certs: false
+
+    - name: Install rhos-release
+      yum: name=/root/rhos-release.rpm
+
+    - name: Setup OSP version to install
+      command: "rhos-release {{rhos_release}} -p {{build}} -r {{rhel_version}}"
+
+    - name: Install terminal multiplexers
+      yum: name={{item}}
+      with_items:
+        - tmux
+        - screen
+
+    - name: Update Packages
+      yum: name=* state=latest
+      register: result
+      when: False
+
+    - name: enable SELinux
+      selinux:
+        policy: targeted
+        state: enforcing
+      register: selinux_set
+
+    - name: Reboot machine
+      shell: "nohup sh -c '( sleep 5 ; shutdown -r now )' &"
+      async: 0
+      poll: 0
+      when: result|changed or selinux_set.reboot_required
+      ignore_errors: true
+
+    # 8 minute timeout
+    - name: Wait for Machine Ready
+      local_action:
+        module: wait_for
+        host: "{{inventory_hostname}}"
+        port: 22
+        delay: 15
+        timeout: 600 
+      when: result|changed or selinux_set.reboot_required
+
+
+    - name: Add stack user
+      user: name=stack
+
+    # Not entirely sure why the password wouldn't take with the initial command
+    - name: Stack user password
+      user:
+        name: stack
+        update_password: always
+        password: "{{stack_password}}"
+
+    - name: Sudo for stack user
+      shell: echo "stack ALL=(root) NOPASSWD:ALL" | tee -a /etc/sudoers.d/stack; chmod 0440 /etc/sudoers.d/stack
+
+    - name: Setup authorized key upload
+      authorized_key:
+        user: stack
+        key: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
+
+    - name: Setup tripleo directories
+      file:
+        path: "{{item}}"
+        state: directory
+        owner: stack
+        group: stack
+      with_items:
+        - /home/stack/images
+        - /home/stack/templates
+
+    - name: Install tripleo
+      yum:
+        name: python-tripleoclient
+
+    - name: Install ceph-ansible
+      yum:
+        name: ceph-ansible
+      when: version >= 12
+
+    - name: Set hostname
+      shell: shopt -s nocasematch; if [[ "{{ uc_on_vm | default(false) }}" = "false" ]]; then hostnamectl set-hostname {{ansible_fqdn}}; else hostnamectl set-hostname vm-{{rhos_release}}.{{vm_domain}}; fi
+
+    - name: Set transient hostname
+      shell: shopt -s nocasematch; if [[ "{{ uc_on_vm | default(false) }}" = "false" ]]; then hostnamectl set-hostname --transient {{ansible_fqdn}}; else hostnamectl set-hostname vm-{{rhos_release}}.{{vm_domain}}; fi
+
+    - name: Fix hosts file
+      lineinfile:
+        dest: /etc/hosts
+        line: "127.0.0.1   {{ansible_fqdn}} {{ansible_hostname}} localhost localhost.localdomain localhost4 localhost4.localdomain4"
+        regexp: "127.0.0.1"
+      when: uc_on_vm|default(false)|bool == false
+
+    - name: Fix hosts file on VM
+      lineinfile:
+        dest: /etc/hosts
+        line: "127.0.0.1   vm-{{rhos_release}} vm-{{rhos_release}}.{{vm_domain}} localhost localhost.localdomain localhost4 localhost4.localdomain4"
+        regexp: "127.0.0.1"
+      when: uc_on_vm|default(false)|bool == true
+
+    - name: Copy undercloud.conf
+      template:
+        src: "templates/undercloud.{{version}}.conf.j2"
+        dest: /home/stack/undercloud.conf
+        owner: stack
+        group: stack
+
+    - name: Deploy Private external vlan interface
+      template:
+        src: templates/ifcfg-vlan.j2
+        dest: "/etc/sysconfig/network-scripts/ifcfg-{{external_vlan_device}}"
+        owner: root
+        group: root
+      when: deploy_external_private_vlan
+
+    - name: Turn on Private external vlan interface
+      shell: ifup {{external_vlan_device}}
+      when: deploy_external_private_vlan
+
+    - name: Install nfv test packages
+      become: true
+      yum: name={{item}}
+      with_items:
+        - ansible
+        - libguestfs-tools-c
+
+
+- hosts: undercloud
+  gather_facts: false
+  vars_files:
+    - vars/main.yml
+  remote_user: stack
+  tasks:
+    - name: Install undercloud
+      shell: openstack undercloud install
+
+    - name: Install ipa and overcloud images
+      become: true
+      yum: name={{item}}
+      with_items:
+        - rhosp-director-images
+        - rhosp-director-images-ipa
+
+    - name: Untar ipa and overcloud images
+      command: "tar -xvf {{item}}  -C /home/stack/images"
+      with_items:
+        - "/usr/share/rhosp-director-images/overcloud-full-latest-{{version}}.0.tar"
+        - "/usr/share/rhosp-director-images/ironic-python-agent-latest-{{version}}.0.tar"
+
+    - name: update root password
+      shell: LIBGUESTFS_BACKEND=direct virt-customize -a /home/stack/images/overcloud-full.qcow2 --root-password password:password
+      ignore_errors: true
+
+    - name: Upload images
+      shell: . /home/stack/stackrc; openstack overcloud image upload --image-path /home/stack/images/
+
+    - name: Get neutron subnet uuid
+      shell: . /home/stack/stackrc; neutron subnet-list|grep start| awk '{print $2}'
+      register: neutron_subnet_uuid
+
+    - name: Setup DNS on Undercloud Neutron subnet
+      shell: |
+         dns_server=$(cat /etc/resolv.conf | sed -n -r 's/nameserver\s+(.+)/\1/p')
+         . /home/stack/stackrc
+         if [[ ${dns_server:-x} == 'x' ]]; then
+             neutron subnet-update {{neutron_subnet_uuid.stdout}} --dns-nameserver ${dns_server}
+         else:
+             neutron subnet-update {{neutron_subnet_uuid.stdout}} --dns-nameserver {{dns_server}}
+         fi
+
+    # Setup Container Registry - Pike (OSP12)
+    - name: Pike(12)/Queens(13) Append additional insecure registry to /etc/sysconfig/docker
+      become: true
+      lineinfile:
+        path: /etc/sysconfig/docker
+        state: present
+        regexp: '^INSECURE_REGISTRY='
+        line: 'INSECURE_REGISTRY="--insecure-registry 192.168.24.1:8787 --insecure-registry 192.168.24.3:8787 --insecure-registry {{additional_insecure_registry}}"'
+      when: local_docker_registry|default(false)|bool == true and version >= 12
+
+    - name: Pike(12)/Queens(13) Restart Docker registry
+      become: true
+      service:
+        name: docker
+        state: restarted
+      when: local_docker_registry|default(false)|bool == true and version >= 12
+
+    - name: Pike(12)/Queens(13) Create template to pull images to local registry
+      shell: ". /home/stack/stackrc; openstack overcloud container image prepare --namespace {{container_namespace}} --tag {{containers_tag}} --pull-source {{additional_insecure_registry}} --prefix openstack --push-destination 192.168.24.1:8787 --images-file overcloud_containers.yaml"
+      when: version >= 12 and local_docker_registry 
+
+    # (akrzos) I could not get this command to respond without:
+    # "Error while fetching server API version: ('Connection aborted.', error(13, 'Permission denied'))"
+    # thus I added retry to this command and yet it still requires rerunning this specific command
+    - name: Pike(12)/Queens(13) Pull images using the container_images.yaml
+      shell: ". /home/stack/stackrc; openstack overcloud container image upload --config-file overcloud_containers.yaml"
+      register: pull_images
+      until: pull_images.rc == 0
+      retries: 2
+      delay: 10
+      ignore_errors: true
+      when: version >= 12 and local_docker_registry
+
+    - name: Pike(12)/Queens(13) Create template for using images from local registry
+      shell: ". /home/stack/stackrc; openstack overcloud container image prepare --tag {{containers_tag}} --namespace 192.168.24.1:8787/{{container_namespace}} --prefix openstack --suffix docker --env-file ~/docker_registry.yaml -r ~/templates/roles_data.yaml"
+      when: version >= 12 and local_docker_registry
+
+    - name: Pike(12)/Queens(13) Create template for using images from remote registry
+      shell:
+        cmd: openstack overcloud container image prepare --namespace={{additional_insecure_registry}}/{{container_namespace}} --env-file=/home/stack/docker_registry.yaml --prefix=openstack --tag={{containers_tag}}
+      when: version >= 12 and not local_docker_registry
+    # End Setup Container Registry
+
+    - name: check if files/instackenv_{{TESTBED}}.json exists
+      stat:
+        path: files/instackenv_{{TESTBED}}.json
+      register: stat_result
+      delegate_to: localhost
+
+    - name: build files/instackenv_{{TESTBED}}.json from template
+      template:
+        src: templates/instackenv.json.j2
+        dest: "files/instackenv_{{TESTBED}}.json"
+      delegate_to: localhost
+      when: not stat_result.stat.exists
+      
+    - name: Get instackenv.json
+      copy:
+        src: files/instackenv_{{TESTBED}}.json 
+        dest: /home/stack/instackenv.json
+        owner: stack
+        group: stack
+
+    - name: Import instackenv.json
+      shell: |
+        . /home/stack/stackrc
+        openstack overcloud node import /home/stack/instackenv.json
+
+    - name: Configure boot
+      shell: |
+        . /home/stack/stackrc
+        openstack overcloud node introspect --all-manageable --provide 
+
+    - name: update node property 
+      shell: |
+        set -x
+        shopt -s nocasematch
+        . /home/stack/stackrc
+        for nodeID in $(openstack baremetal node list -c UUID -f value); do
+          ipmi_address=$(openstack baremetal node show -c driver_info -f json $nodeID | python -c 'import sys, json; print json.load(sys.stdin)["driver_info"]["ipmi_address"]')
+          if [[ "{{use_node_profile|default(false)|bool}}" == "false" ]]; then
+            if [ "${ipmi_address}" = "{{compute_0_ipmi}}" ]; then
+              openstack baremetal node set --property capabilities='{{compute_0_capabilities}}' $nodeID
+            fi
+            if [ "${ipmi_address}" = "{{controller_0_ipmi}}" ]; then
+              openstack baremetal node set --property capabilities='{{controller_0_capabilities}}' $nodeID
+            fi
+          else
+            if [ "${ipmi_address}" = "{{controller_0_ipmi}}" ]; then
+              openstack baremetal node set --property capabilities="profile:control,boot_option:local" $nodeID
+            else
+              openstack baremetal node set --property capabilities='profile:compute,boot_option:local' $nodeID
+            fi
+          fi
+        done
+      register: script_output
+    - debug:
+        msg: "{{script_output}}" 
+    - name: END
+      meta: end_play
