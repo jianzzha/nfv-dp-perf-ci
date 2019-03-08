@@ -20,7 +20,7 @@
         owner: stack
         group: stack
     - name: start testpmd
-      shell: chmod u+x start_trex.sh; ./start_trex.sh nfv_test.cfg
+      shell: chmod u+x start_testpmd.sh; ./start_testpmd.sh nfv_test.cfg
       args:
         chdir: /home/stack/nfv-scripts-ci
         
