@@ -244,9 +244,9 @@ function start_pbench () {
     done
     if [ "$ftrace_host" == "y" ]; then
       if [ -z "${traffic_gen_remote_addr}" ]; then
-    	sudo "PATH=$PATH" sh -c "pbench-register-tool --remote=$node --name=ftrace -- --cpus=$pmd_vm_eth1,$pmd_vm_eth2,$pmd_sriov0,$pmd_dpdk1,8,10"
+    	sudo "PATH=$PATH" sh -c "pbench-register-tool --remote=$node --name=ftrace -- --cpus=$pmd_vm_eth1,$pmd_vm_eth2,$pmd_dpdk0,$pmd_dpdk1,8,10"
       else
-        ssh root@${traffic_gen_remote_addr} "pbench-register-tool --remote=$node --name=ftrace -- --cpus=$pmd_vm_eth1,$pmd_vm_eth2,$pmd_sriov0,$pmd_dpdk1,8,10"
+        ssh root@${traffic_gen_remote_addr} "pbench-register-tool --remote=$node --name=ftrace -- --cpus=$pmd_vm_eth1,$pmd_vm_eth2,$pmd_dpdk0,$pmd_dpdk1,8,10"
       fi
     fi
   done
@@ -512,9 +512,9 @@ echo "##### repin threads on compute nodes"
 if [[ $vnic_type == "sriov" ]]; then
   ansible-playbook -i $nodes ${SCRIPT_PATH}/repin_threads.yml --extra-vars "repin_kvm_emulator=${repin_kvm_emulator}" || error "failed to repin thread"
 else
-  pmd_core_list="$pmd_vm_eth0,$pmd_vm_eth1,$pmd_vm_eth2,$pmd_sriov0,$pmd_dpdk1,$pmd_dpdk2,$spare_cores"
+  pmd_core_list="$pmd_vm_eth0,$pmd_vm_eth1,$pmd_vm_eth2,$pmd_dpdk0,$pmd_dpdk1,$pmd_dpdk2,$spare_cores"
   pmd_core_mask=`get_cpumask $pmd_core_list`
-  ansible-playbook -i $nodes ${SCRIPT_PATH}/repin_threads.yml --extra-vars "repin_ovs_nonpmd=${repin_ovs_nonpmd} repin_kvm_emulator=${repin_kvm_emulator} repin_ovs_pmd=${repin_ovs_pmd} pmd_vm_eth0=${pmd_vm_eth0} pmd_vm_eth1=${pmd_vm_eth1} pmd_vm_eth2=${pmd_vm_eth2} pmd_sriov0=${pmd_sriov0} pmd_dpdk1=${pmd_dpdk1} pmd_dpdk2=${pmd_dpdk2} pmd_core_mask=${pmd_core_mask}" || error "failed to repin thread"
+  ansible-playbook -i $nodes ${SCRIPT_PATH}/repin_threads.yml --extra-vars "repin_ovs_nonpmd=${repin_ovs_nonpmd} repin_kvm_emulator=${repin_kvm_emulator} repin_ovs_pmd=${repin_ovs_pmd} pmd_vm_eth0=${pmd_vm_eth0} pmd_vm_eth1=${pmd_vm_eth1} pmd_vm_eth2=${pmd_vm_eth2} pmd_dpdk0=${pmd_dpdk0} pmd_dpdk1=${pmd_dpdk1} pmd_dpdk2=${pmd_dpdk2} pmd_core_mask=${pmd_core_mask}" || error "failed to repin thread"
 fi
 
 # check all VM are reachable by ping
