@@ -7,6 +7,9 @@
     ansible_user: stack
 
   tasks:
+    - name: copy vars.yaml to nfv-scripts-ci/testpmd_vars.yaml
+      local_action: command cp vars.yaml nfv-scripts-ci/testpmd_vars.yaml
+
     - name: copy nfv scripts 
       copy:
         src: "nfv-scripts-ci/"

@@ -12,17 +12,16 @@
             rm -rf trafficgen-ci
         fi
         mkdir trafficgen-ci
-    - name: copy over the trafficgen cmd
-      copy:
-        src: "trafficgen_cmd.sh"
+    - name: copy trafficgen cmd
+      template:
+        src: templates/trafficgen_cmd.sh.j2 
         dest: /root/trafficgen-ci/trafficgen_cmd.sh
         mode: 0755
-    - name: copy over the parameters file
-      copy:
-        src: parameters
-        dest: /root/trafficgen-ci/parameters
+        owner: root
+        group: root
     - shell: |
-        screen -dmS trafficgen bash -c "./trafficgen_cmd.sh" 
+        #screen -dmS trafficgen bash -c "./trafficgen_cmd.sh" 
+        ./trafficgen_cmd.sh
       args:
         chdir: /root/trafficgen-ci 
 

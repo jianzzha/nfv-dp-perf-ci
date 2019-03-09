@@ -55,20 +55,24 @@
         state: present
       become: yes
 
-    - shell: chmod u+x deploy.sh; ./deploy.sh > deploy.output
+    - name: deploy overcloud
+      shell: chmod u+x deploy.sh; ./deploy.sh > deploy.output
       args:
         chdir: /home/stack/templates-ci/{{TEST_ITEM}}
 
-    - fetch:
+    - name: fetch deploy.output
+      fetch:
         src: /home/stack/templates-ci/{{TEST_ITEM}}/deploy.output
         dest: deploy.output
         flat: yes
 
-    - shell: chmod u+x fix_tuned_after_deploy.sh; ./fix_tuned_after_deploy.sh > fix_tuned.output
+    - name: apply fix_tuned_after_deploy.sh
+      shell: chmod u+x fix_tuned_after_deploy.sh; ./fix_tuned_after_deploy.sh > fix_tuned.output
       args:
         chdir: /home/stack/templates-ci/{{TEST_ITEM}}
 
-    - fetch:
+    - name: fetch fix_tuned.output
+      fetch:
         src: /home/stack/templates-ci/{{TEST_ITEM}}/fix_tuned.output
         dest: fix_tuned.output
         flat: yes

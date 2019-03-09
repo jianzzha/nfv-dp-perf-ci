@@ -67,7 +67,7 @@
             tuned-adm profile cpu-partitioning
             reboot_required=1
         fi
-        for opt in default_hugepagesz=1G hugepagesz=1G hugepages=32 isolcpus=${core_list} ipv6.disable=1 spectre_v2=off nopti; do
+        for opt in default_hugepagesz=1G hugepagesz=1G hugepages=32 isolcpus=${core_list} ipv6.disable=1 spectre_v2=off nopti iommu=pt intel_iommu=on; do
             if [[ ${boot_opts} != *"$opt"* ]]; then
                 grubby --update-kernel=`grubby --default-kernel` --args="$opt"
                 reboot_required=1
