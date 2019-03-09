@@ -15,7 +15,7 @@ fi
 clean_done=0
 for i in $(seq 600); do
   sleep 3
-  if ironic node-list | grep clean; then
+  if ironic node-list | grep -e clean -e failed -e error; then
     continue
   else
     clean_done=1

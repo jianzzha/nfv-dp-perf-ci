@@ -118,6 +118,11 @@ resources:
                   vlan_id: {get_param: StorageNetworkVlanID}
                   addresses:
                   - ip_netmask: {get_param: StorageIpSubnet}
+                - type: vlan
+                  use_dhcp: false
+                  vlan_id: {get_param: ExternalNetworkVlanID}
+                  addresses:
+                  - ip_netmask: {get_param: ExternalIpSubnet}
               - type: ovs_bridge 
                 name: br-access
                 use_dhcp: false
