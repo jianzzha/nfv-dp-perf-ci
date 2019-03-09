@@ -1,0 +1,11 @@
+DEVICE={{vm_access_if}}
+ONBOOT=yes
+HOTPLUG=no
+NM_CONTROLLED=no
+{% if ACCESS_NETWORK_TYPE == 'vlan' %}
+VLAN=yes
+{% endif %}
+IPADDR=10.1.1.1
+NETMASK=255.255.255.0
+BOOTPROTO=none
+MTU=1500

@@ -1,0 +1,52 @@
+- hosts: undercloud
+  gather_facts: true 
+  vars_files:
+    - vars.yaml
+  remote_user: root
+  tasks:
+    - name: add external vlan port to ovs on undercloud
+      openvswitch_port:
+        bridge: br-ctlplane
+        port: vlan{{ExternalNetworkVlanID}}
+        tag: "{{ExternalNetworkVlanID}}"
+        set: "Interface vlan{{ExternalNetworkVlanID}} type=internal"
+      when: UndercloudExternalNetwork == 'ovs-vlan'
+    - name: set interface name 
+      set_fact:
+        baremetal_access_if: "{{ 'vlan' + ExternalNetworkVlanID|string if UndercloudExternalNetwork | search('vlan') else UndercloudExternalNetwork }}"
+        vm_access_if: "{{ UNDERCLOUD_ACCESS_PORT if ACCESS_NETWORK_TYPE == 'flat' else  UNDERCLOUD_ACCESS_PORT + '.' + ACCESS_NETWORK_VLAN|string }}"
+    - debug: msg="baremetal_access_if={{baremetal_access_if}} vm_access_if={{vm_access_if}}"
+
+    - name: Deploy external interface on undercloud
+      template:
+        src: templates/ifcfg-baremetal_access.j2
+        dest: /etc/sysconfig/network-scripts/ifcfg-{{baremetal_access_if}}
+        owner: root
+        group: root
+      when: not UNDERCLOUD_IS_VM
+    - name: Turn on external interface
+      shell: ifup {{baremetal_access_if}}
+      when: not UNDERCLOUD_IS_VM 
+    - name: Deploy VM access interface on undercloud
+      template:
+        src: templates/ifcfg-vm-access.j2
+        dest: /etc/sysconfig/network-scripts/ifcfg-{{vm_access_if}}
+        owner: root
+        group: root
+      when: not UNDERCLOUD_IS_VM
+    - name: Turn on VM access interface 
+      shell: ifup {{vm_access_if}}
+      when: not UNDERCLOUD_IS_VM
+
+    - sysctl:
+        name: net.ipv4.ip_forward
+        value: 1
+        sysctl_set: yes
+        state: present
+        reload: yes
+    - iptables:
+        table: nat
+        chain: POSTROUTING 
+        out_interface: "{{ansible_default_ipv4.interface}}"
+        jump: MASQUERADE 
+        rule_num: 1

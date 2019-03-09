@@ -57,19 +57,18 @@ if [[ ${TESTBED} != "ministack" ]]; then
     fi
 fi
 
-# take care of BIOS setting before proceeding 
-if [[ ${UPDATE_BIOS} == "True" ]]; then
-    ansible-playbook -i hosts bios_${TESTBED}.yaml
-fi
-
 chmod u+x cpu_allocation.py
-if [[ ${CPU_ALLOCATION} == "same_as_trex" ]]; then
-    ansible-playbook -i hosts -e "baremetal=trafficgen" get_cpuinfo.yaml
-elif [[ ${CPU_ALLOCATION} == "same_as_undercloud" ]]; then
-    ansible-playbook -i hosts -e "baremetal=undercloud" get_cpuinfo.yaml
+
+# check if undercloud running in VM
+if ansible undercloud -i hosts -m command -a 'dmidecode -s "system-product-name"' | grep KVM; then
+    UNDERCLOUD_IS_VM='true'
+else
+    UNDERCLOUD_IS_VM='false'
 fi
+echo "UNDERCLOUD_IS_VM: ${UNDERCLOUD_IS_VM}" | tee -a vars.yaml
  
-if [[ ${CPU_ALLOCATION} != "manual" ]]; then
+if [[ ${CPU_ALLOCATION} != "manual" && ${UNDERCLOUD_IS_VM} == 'false' ]]; then
+    ansible-playbook -i hosts -e "baremetal=undercloud" get_cpuinfo.yaml
     ./cpu_allocation.py ci_sysinfo.yaml cpu_resource.out
     source cpu_resource.out
     sed -i -e "s/ISOLATED_CPU_LIST: .*/ISOLATED_CPU_LIST: ${ISOLATED_CPU_LIST}/" vars.yaml
@@ -92,7 +91,7 @@ if [[ ${CPU_ALLOCATION} != "manual" ]]; then
         sed -i -e "s/PMD_DATA_DPDK0: .*/PMD_DATA_DPDK0: ${PMD_DATA_DPDK0}/" vars.yaml
         sed -i -e "s/PMD_DATA_ETH1: .*/PMD_DATA_ETH1: ${PMD_DATA_ETH1}/" vars.yaml
         sed -i -e "s/PMD_DATA_DPDK1: .*/PMD_DATA_DPDK1: ${PMD_DATA_DPDK1}/" vars.yaml
-        sed -i -e "s/PMD_CORE_LIST: .*/PMD_CORE_LIST: ${PMD_DATA_ETH0},${PMD_DATA_ETH1},${PMD_DATA_DPDK0},${PMD_DATA_DPDK1}/" vars.yaml
+        sed -i -e "s/PMD_CORE_LIST: .*/PMD_CORE_LIST: ${PMD_DATA_ETH0},${PMD_DATA_ETH1},${PMD_DATA_DPDK0},${PMD_DATA_DPDK1},${PMD_ACCESS_ETH},${PMD_ACCESS_DPDK}/" vars.yaml
         sed -i -e "s/OVS_LCORE: .*/OVS_LCORE: ${OVS_LCORE}/" vars.yaml
     fi
     data_nic_vendor=$(sed -n -r 's/DATA_NIC_VENDOR: (.*)/\1/p' ci_sysinfo.yaml)
@@ -104,4 +103,4 @@ if [[ ${CPU_ALLOCATION} != "manual" ]]; then
 fi
 
 cat vars.yaml | sed -e '/---/d' -e 's/: /=/' > parameters
- 
+
