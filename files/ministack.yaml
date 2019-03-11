@@ -22,4 +22,4 @@ PMD_CORE_LIST: 2,4,26,28,16,40
 OVS_LCORE: 6,30
 ExternalNetworkVlanID: 10
 UndercloudExternalNetwork: eth3
-
+ACCESS_NETWORK_TYPE: flat

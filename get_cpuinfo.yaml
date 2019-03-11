@@ -1,10 +1,13 @@
 ---
 - hosts: "{{baremetal}}"
-  gather_facts: false
+  gather_facts: false 
   remote_user: root
   vars_files:
     - vars.yaml
   tasks:
+    - fail:
+        msg: "{{inventory_hostname}} is running in a guest. Can't use a guest CPU info."
+        when: UNDERCLOUD_IS_VM
     - set_fact:
         ofile: /tmp/ci_sysinfo.yaml
     - shell: |

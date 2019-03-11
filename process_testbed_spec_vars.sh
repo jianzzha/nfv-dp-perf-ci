@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 set -eux -o pipefail
+export ANSIBLE_HOST_KEY_CHECKING=False
 
 # Prepare ansible inventory file
 echo "[undercloud]" | tee -a hosts
@@ -59,15 +60,10 @@ fi
 
 chmod u+x cpu_allocation.py
 
-# check if undercloud running in VM
-if ansible undercloud -i hosts -m command -a 'dmidecode -s "system-product-name"' | grep KVM; then
-    UNDERCLOUD_IS_VM='true'
-else
-    UNDERCLOUD_IS_VM='false'
-fi
-echo "UNDERCLOUD_IS_VM: ${UNDERCLOUD_IS_VM}" | tee -a vars.yaml
+# get DNS_SERVER into vars.yaml 
+ansible-playbook -i hosts get_undercloud_info.yaml
  
-if [[ ${CPU_ALLOCATION} != "manual" && ${UNDERCLOUD_IS_VM} == 'false' ]]; then
+if [[ ${CPU_ALLOCATION} != "manual" ]]; then
     ansible-playbook -i hosts -e "baremetal=undercloud" get_cpuinfo.yaml
     ./cpu_allocation.py ci_sysinfo.yaml cpu_resource.out
     source cpu_resource.out

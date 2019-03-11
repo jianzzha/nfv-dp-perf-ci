@@ -3,7 +3,7 @@
   gather_facts: false
   remote_user: root
   tasks:
-  - name: install ssh for stack 
+  - name: install ssh id file for stack 
     authorized_key:
       user: stack 
       state: present
@@ -21,7 +21,7 @@
 
     - name: copy overcloud deployment templates
       template:
-        src: "templates/{{TEST_ITEM}}/{{item.src}}"
+        src: "templates/{{TEST_ITEM}}{{'-ministack' if TESTBED == 'ministack' else ''}}/{{item.src}}"
         dest: "/home/stack/templates-ci/{{TEST_ITEM}}/{{item.dest}}"
         owner: stack
         group: stack

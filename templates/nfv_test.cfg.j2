@@ -2,7 +2,7 @@ disable_cve="{{DISABLE_CVE}}"
 vnic_type="{{TEST_ITEM}}"
 # if user_data has a value then cloud-init will be used and the user data will come from here
 #user_data="mime-data"
-dns_server=10.35.28.28
+dns_server={{DNS_SERVER}}
 # how many instances to run nfv workload
 num_vm=1
 # optionally specify the specific compute-node to start the instance, this is used when direct connection is made from trafficgen to the compute

@@ -1,0 +1,14 @@
+---
+- hosts: undercloud 
+  gather_facts: true 
+  remote_user: root
+  tasks:
+    - shell: dmidecode -s 'system-product-name'
+      register: product
+    - local_action:
+        module: lineinfile
+        path: vars.yaml
+        regexp: 'UNDERCLOUD_IS_VM'
+        line: '{{"UNDERCLOUD_IS_VM: true" if "KVM" in product.stdout else "UNDERCLOUD_IS_VM: false"}}'
+        insertafter: EOF 
+    - local_action: shell echo DNS_SERVER":" {{ansible_dns.nameservers[0]}} >> vars.yaml
