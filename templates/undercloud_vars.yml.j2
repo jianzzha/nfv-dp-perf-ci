@@ -61,7 +61,7 @@ external_network_vip: 172.21.0.10
 
 # External private vlan on undercloud:
 deploy_external_private_vlan: false 
-external_vlan_device: "{{DEPLOY_PORT}}".{{ExternalNetworkVlanID}}
+external_vlan_device: "{{DEPLOY_PORT}}.{{ExternalNetworkVlanID}}"
 private_external_address: 172.21.0.1
 private_external_netmask: 255.255.255.0
 # Tripleo maps external network port to noop.yml, lets keep the default behavior

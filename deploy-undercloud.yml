@@ -8,14 +8,14 @@
 # Tasks as root
 - hosts: localhost
   connection: local
-  gather_facts: false
+  gather_facts: true 
   vars_files:
     - vars.yaml
   tasks:
     - name: copy undercloud_vars.yml
       template:
         src: templates/undercloud_vars.yml.j2
-        dest: undercloud_vars.yaml
+        dest: '{{ playbook_dir }}/undercloud_vars.yaml'
 
 - hosts: undercloud
   gather_facts: true
@@ -158,9 +158,11 @@
 
 - hosts: undercloud
   gather_facts: false
+  vars:
+    ansible_user: stack
   vars_files:
-    - vars/main.yml
-  remote_user: stack
+    - undercloud_vars.yaml
+    - vars.yaml
   tasks:
     - name: Install undercloud
       shell: openstack undercloud install
