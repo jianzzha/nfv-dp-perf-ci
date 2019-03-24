@@ -44,8 +44,10 @@
         sysctl_set: yes
         state: present
         reload: yes
-    - iptables:
+    - name: MASQUERADE
+      iptables:
         table: nat
+        action: insert
         chain: POSTROUTING 
         out_interface: "{{ansible_default_ipv4.interface}}"
         jump: MASQUERADE 

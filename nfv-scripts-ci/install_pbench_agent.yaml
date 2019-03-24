@@ -1,0 +1,17 @@
+---
+- hosts: VMs,computes
+  gather_facts: false
+  tasks:
+  - name: install yum-plugin-copr
+    yum:
+      name: yum-plugin-copr
+      state: present
+    register: copr
+  - name: enable ndokos/pbench
+    shell: yum copr enable ndokos/pbench -y
+    when: copr.changed == True
+  - name: install pbench-agent
+    yum:
+      name: pbench-agent
+      state: latest
+

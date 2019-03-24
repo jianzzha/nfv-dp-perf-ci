@@ -1,0 +1,19 @@
+---
+- hosts: undercloud 
+  gather_facts: false 
+  vars:
+    ansible_user: stack
+  vars_files:
+    - vars.yaml
+  tasks:
+    - shell: |
+        shopt -s nocasematch
+        . /home/stack/stackrc
+        for nodeID in $(openstack baremetal node list -c UUID -f value); do
+          ipmi_address=$(openstack baremetal node show -c driver_info -f json $nodeID | python -c 'import sys, json; print json.load(sys.stdin)["driver_info"]["ipmi_address"]')
+          if [ "${ipmi_address}" = "{{COMPUTE_IDRAC}}" ]; then        
+            openstack baremetal introspection data save $nodeID
+          fi
+        done
+      register: compute_data
+    - local_action: copy content={{ compute_data.stdout }} dest='{{playbook_dir}}/compute_data'

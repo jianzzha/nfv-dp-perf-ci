@@ -242,13 +242,6 @@ function start_pbench () {
         ssh root@${traffic_gen_remote_addr} "pbench-register-tool --remote=$node --name=$tool"
       fi
     done
-    if [ "$ftrace_host" == "y" ]; then
-      if [ -z "${traffic_gen_remote_addr}" ]; then
-    	sudo "PATH=$PATH" sh -c "pbench-register-tool --remote=$node --name=ftrace -- --cpus=$pmd_vm_eth1,$pmd_vm_eth2,$pmd_dpdk0,$pmd_dpdk1,8,10"
-      else
-        ssh root@${traffic_gen_remote_addr} "pbench-register-tool --remote=$node --name=ftrace -- --cpus=$pmd_vm_eth1,$pmd_vm_eth2,$pmd_dpdk0,$pmd_dpdk1,8,10"
-      fi
-    fi
   done
 
   echo "start tools on VMs"
@@ -261,13 +254,6 @@ function start_pbench () {
         ssh root@${traffic_gen_remote_addr} "pbench-register-tool --remote=demo$i --name=$tool"
       fi
     done
-    if [ "$ftrace_vm" == "y" ]; then
-      if [ -z "${traffic_gen_remote_addr}" ]; then
-        sudo "PATH=$PATH" sh -c "pbench-register-tool --remote=$node --name=ftrace -- --cpus=2,4"
-      else
-        ssh root@${traffic_gen_remote_addr} "pbench-register-tool --remote=$node --name=ftrace -- --cpus=2,4"
-      fi
-    fi
   done
 }
  
@@ -565,4 +551,5 @@ done
 
 echo "##### provision nfv work load"
 ansible-playbook -i $nodes start_testpmd.yaml
-
+ansible-playbook -i $nodes install_pbench_agent.yaml
+start_pbench
