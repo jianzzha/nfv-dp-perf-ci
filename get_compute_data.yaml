@@ -11,7 +11,16 @@
         . /home/stack/stackrc
         for nodeID in $(openstack baremetal node list -c UUID -f value); do
           ipmi_address=$(openstack baremetal node show -c driver_info -f json $nodeID | python -c 'import sys, json; print json.load(sys.stdin)["driver_info"]["ipmi_address"]')
-          if [ "${ipmi_address}" = "{{COMPUTE_IDRAC}}" ]; then        
+          if [ "${ipmi_address}" = "{{COMPUTE_IDRAC}}" ]; then
+            if [[ '{{UPDATE_BIOS}}' == 'true' && '{{INSTALL_UNDERCLOUD}}' == 'false' ]]; then
+              if openstack baremetal node list --provision-state available | grep $nodeID >/dev/null; then
+                # need to be in manageable state first
+                openstack baremetal node manage $nodeID > /dev/null
+              fi
+              openstack baremetal introspection start $nodeID --wait > /dev/null
+              openstack baremetal node provide $nodeID > /dev/null
+              openstack baremetal node set --property capabilities='node:compute-0,boot_option:local' $nodeID > /dev/null
+            fi   
             openstack baremetal introspection data save $nodeID
           fi
         done

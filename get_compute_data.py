@@ -43,7 +43,7 @@ if thread_per_core > 1:
 else:
     if vars['TEST_ITEM'] == 'dpdk' or vars['TEST_ITEM'] == 'sriov':
         # dpdk or sriov test require hyper threading enabled
-        sys.exit("Disable hyper threading before proceed sriov or dpdk test")
+        sys.exit("Enable hyper threading before proceed sriov or dpdk test")
 
 cpu_index = 0
 if vars['TEST_ITEM'] == 'dpdk':
