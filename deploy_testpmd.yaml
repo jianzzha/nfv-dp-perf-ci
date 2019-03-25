@@ -7,26 +7,35 @@
     ansible_user: stack
 
   tasks:
-    - name: copy vars.yaml to nfv-scripts-ci/testpmd_vars.yaml
-      local_action: command cp vars.yaml nfv-scripts-ci/testpmd_vars.yaml
-
     - name: copy nfv scripts 
       copy:
         src: "nfv-scripts-ci/"
         dest: "/home/stack/nfv-scripts-ci/"
         owner: stack
         group: stack
+
+    - name: copy vars.yaml to nfv-scripts-ci/testpmd_vars.yaml
+      copy:
+        src: vars.yaml 
+        dest: /home/stack/nfv-scripts-ci/testpmd_vars.yaml
+        owner: stack
+        group: stack
+
+    - name: copy files/all.repo to nfv-scripts-ci/all.repo         
+      copy:
+        src: files/all.repo
+        dest: /home/stack/nfv-scripts-ci/all.repo
+        owner: stack
+        group: stack
+
     - name: copy nfv-config file
       template:
         src: "templates/nfv_test.cfg.j2"
         dest: "/home/stack/nfv-scripts-ci/nfv_test.cfg"
         owner: stack
         group: stack
+
     - name: start testpmd
       shell: chmod u+x start_testpmd.sh; ./start_testpmd.sh nfv_test.cfg
       args:
         chdir: /home/stack/nfv-scripts-ci
-        
-
- 
-

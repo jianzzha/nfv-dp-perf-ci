@@ -2,6 +2,10 @@
 - hosts: VMs,computes
   gather_facts: false
   tasks:
+  - name: make sure all.repo exist
+    copy:
+      src: all.repo
+      dest: /etc/yum.repos.d/all.repo
   - name: install yum-plugin-copr
     yum:
       name: yum-plugin-copr
