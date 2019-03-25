@@ -14,7 +14,7 @@
     - name: set interface name 
       set_fact:
         baremetal_access_if: "{{ 'vlan' + ExternalNetworkVlanID|string if UndercloudExternalNetwork | search('vlan') else UndercloudExternalNetwork }}"
-        vm_access_if: "{{ UNDERCLOUD_ACCESS_PORT if ACCESS_NETWORK_TYPE == 'flat' else  UNDERCLOUD_ACCESS_PORT + '.' + ACCESS_NETWORK_VLAN|string }}"
+        vm_access_if: "{{ UNDERCLOUD_ACCESS_PORT if UNDERCLOUD_ACCESS_NETWORK_TYPE == 'flat' else  UNDERCLOUD_ACCESS_PORT + '.' + ACCESS_NETWORK_VLAN|string }}"
     - debug: msg="baremetal_access_if={{baremetal_access_if}} vm_access_if={{vm_access_if}}"
 
     - name: Deploy external interface on undercloud
